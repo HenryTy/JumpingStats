@@ -1,0 +1,52 @@
+<resources>
+    <string name="app_name">JumpingStats</string>
+    <string name="name">Name</string>
+    <string name="surname">Surname</string>
+    <string name="height">Height (in metres)</string>
+    <string name="height_text">Height</string>
+    <string name="date_of_birth">Date of birth</string>
+    <string name="country">Country</string>
+    <string name="city">City</string>
+    <string name="pointK">Point K [m]</string>
+    <string name="hillSize">Hill size [m]</string>
+    <string name="headWindPoints">Points for head wind [points per m/s]</string>
+    <string name="tailWindPoints">Points for tail wind [points per m/s]</string>
+    <string name="date">Date</string>
+    <string name="open_drawer">Open drawer</string>
+    <string name="close_drawer">Close drawer</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete_jumper_message">This jumper will be deleted</string>
+
+    <string-array name="countries">
+        <item>Austria</item>
+        <item>Bulgaria</item>
+        <item>Canada</item>
+        <item>Czech Republic</item>
+        <item>Estonia</item>
+        <item>Finland</item>
+        <item>France</item>
+        <item>Germany</item>
+        <item>Italy</item>
+        <item>Japan</item>
+        <item>Kazakhstan</item>
+        <item>Norway</item>
+        <item>Poland</item>
+        <item>Russia</item>
+        <item>Slovenia</item>
+        <item>South Korea</item>
+        <item>Switzerland</item>
+        <item>USA</item>
+    </string-array>
+
+    <string-array name="drawer_options">
+        <item>Statistics</item>
+        <item>Competitions</item>
+        <item>Jumpers</item>
+    </string-array>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>

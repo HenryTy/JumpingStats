@@ -1,0 +1,40 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <style name="floatEditText" parent="@style/editTextStyle">
+        <item name="android:inputType">numberDecimal</item>
+    </style>
+
+    <style name="nameEditText" parent="@style/editTextStyle">
+        <item name="android:inputType">textCapWords</item>
+    </style>
+
+    <style name="editTextStyle">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:imeOptions">actionNext</item>
+    </style>
+
+    <style name="saveButtonStyle" parent="@style/floatingButtonStyle">
+        <item name="android:visibility">invisible</item>
+        <item name="android:src">@drawable/ic_save_black_24dp</item>
+    </style>
+
+    <style name="addButtonStyle" parent="@style/floatingButtonStyle">
+        <item name="android:src">@drawable/ic_add_black_24dp</item>
+    </style>
+
+    <style name="floatingButtonStyle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_gravity">end|bottom</item>
+    </style>
+
+</resources>
