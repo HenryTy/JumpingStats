@@ -29,6 +29,7 @@ import ty.henry.jumpingstats.DBHelper;
 import ty.henry.jumpingstats.R;
 import ty.henry.jumpingstats.TextImageAdapter;
 import ty.henry.jumpingstats.TextImageAdapter.TextImage;
+import ty.henry.jumpingstats.jumpers.Jumper;
 
 
 public class CompetitionsFragment extends Fragment {
@@ -41,6 +42,7 @@ public class CompetitionsFragment extends Fragment {
 
     public interface CompetitionsFragmentListener {
         void openFragment(Fragment fragment, boolean backStack);
+        ArrayList<Jumper> getJumpersList();
         ArrayList<TextImageAdapter.TextImage> getCompetitionsList();
         TreeMap<Season, TreeSet<Competition>> getSeasonToCompetitionsMap();
         void onCompetitionAdded(Competition competition);
@@ -66,6 +68,12 @@ public class CompetitionsFragment extends Fragment {
         LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
         recyclerView.setLayoutManager(layoutManager);
         textImageAdapter = new TextImageAdapter<>(listener.getCompetitionsList());
+        textImageAdapter.setListener(position -> {
+            CompetitionDetailsFragment detailsFragment = new CompetitionDetailsFragment();
+            detailsFragment.setListener(listener);
+            detailsFragment.setCompetition((Competition) listener.getCompetitionsList().get(position));
+            listener.openFragment(detailsFragment, true);
+        });
         recyclerView.setAdapter(textImageAdapter);
 
         addButton = fragmentView.findViewById(R.id.addButton);

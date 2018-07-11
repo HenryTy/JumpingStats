@@ -19,7 +19,7 @@ public class Jumper implements TextImageAdapter.TextImage {
     private Calendar dateOfBirth;
     private float height;
 
-    private HashMap<Competition, Result> compResMap;
+    private HashMap<Competition, Result[]> compResMap;
 
     public Jumper(String name, String surname, Country country, Calendar dateOfBirth, float height) {
         this.name = name;
@@ -69,17 +69,37 @@ public class Jumper implements TextImageAdapter.TextImage {
         return diff;
     }
 
-    public Result getResult(Competition competition) throws Exception {
-        Result result = compResMap.get(competition);
-        if(result==null) {
+    public Result[] getResults(Competition competition) throws Exception {
+        Result[] results = compResMap.get(competition);
+        if(results==null) {
             String message = "No results for " + this.surname + " in competition in " + competition.getCity();
             throw new Exception(message);
         }
-        return result;
+        return results;
     }
 
-    public void setResult(Competition competition, Result result) {
-        compResMap.put(competition, result);
+    public void setResult(Competition competition, Result result, int series) {
+        if(series>2 || series<1) {
+            throw new IllegalArgumentException("Series argument must be 1 or 2");
+        }
+        Result[] resultArr = compResMap.get(competition);
+        if(resultArr == null) {
+            resultArr = new Result[2];
+            compResMap.put(competition, resultArr);
+        }
+        resultArr[series-1] = result;
+    }
+
+    public float getPointsFromComp(Competition competition) throws Exception {
+        float points = 0;
+        Result[] results = getResults(competition);
+        if(results[0] != null) {
+            points += results[0].points();
+        }
+        if(results[1] != null) {
+            points += results[1].points();
+        }
+        return points;
     }
 
     @Override

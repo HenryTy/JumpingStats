@@ -22,6 +22,7 @@ import java.util.TreeSet;
 import ty.henry.jumpingstats.TextImageAdapter.TextImage;
 import ty.henry.jumpingstats.competitions.AddEditCompetitionFragment;
 import ty.henry.jumpingstats.competitions.Competition;
+import ty.henry.jumpingstats.competitions.CompetitionDetailsFragment;
 import ty.henry.jumpingstats.competitions.CompetitionsFragment;
 import ty.henry.jumpingstats.competitions.Season;
 import ty.henry.jumpingstats.jumpers.AddEditJumperFragment;
@@ -182,8 +183,8 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
                         ((JumpersFragment) fragment).setListener(MainActivity.this);
                         break;
                     default:
-                        fragment = new AddEditJumperFragment();
-                        ((AddEditJumperFragment) fragment).setListener(MainActivity.this);
+                        fragment = new JumpersFragment();
+                        ((JumpersFragment) fragment).setListener(MainActivity.this);
                 }
                 openFragment(fragment, true);
                 drawerLayout.closeDrawer(drawerList);
@@ -199,7 +200,7 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
                 Fragment fragment = getSupportFragmentManager().findFragmentByTag(VISIBLE_FRAGMENT);
                 int position = 0;
                 if(fragment instanceof AddEditCompetitionFragment ||
-                        fragment instanceof CompetitionsFragment) {
+                        fragment instanceof CompetitionsFragment || fragment instanceof CompetitionDetailsFragment) {
                     position = 1;
                 }
                 else if(fragment instanceof JumpersFragment ||

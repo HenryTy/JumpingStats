@@ -104,4 +104,8 @@ public class Result {
     public float pointsForGate() {
         return gateCompensation;
     }
+
+    public float points() {
+        return pointsForDistance() + pointsForGate() + pointsForStyle() + pointsForWind();
+    }
 }
