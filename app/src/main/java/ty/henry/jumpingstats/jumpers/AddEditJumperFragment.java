@@ -156,6 +156,7 @@ public class AddEditJumperFragment extends Fragment {
         Jumper jumper = new Jumper(name, surname, country, dateOfBirth, height);
         if(jumperToEdit!=null) {
             jumper.setId(jumperToEdit.getId());
+            jumper.setCompResMap(jumperToEdit.getCompResMap());
         }
         return jumper;
     }

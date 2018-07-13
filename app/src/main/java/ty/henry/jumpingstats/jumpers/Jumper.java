@@ -34,8 +34,16 @@ public class Jumper implements TextImageAdapter.TextImage {
         this.id = id;
     }
 
+    public void setCompResMap(HashMap<Competition, Result[]> compResMap) {
+        this.compResMap = compResMap;
+    }
+
     public int getId() {
         return id;
+    }
+
+    public HashMap<Competition, Result[]> getCompResMap() {
+        return compResMap;
     }
 
     public String getName() {
@@ -78,16 +86,21 @@ public class Jumper implements TextImageAdapter.TextImage {
         return results;
     }
 
-    public void setResult(Competition competition, Result result, int series) {
-        if(series>2 || series<1) {
-            throw new IllegalArgumentException("Series argument must be 1 or 2");
-        }
+    public void setResult(Competition competition, Result result) {
         Result[] resultArr = compResMap.get(competition);
         if(resultArr == null) {
             resultArr = new Result[2];
             compResMap.put(competition, resultArr);
         }
-        resultArr[series-1] = result;
+        resultArr[result.getSeries()-1] = result;
+    }
+
+    public void removeResult(Competition competition, int series) {
+        Result[] resultArr = compResMap.get(competition);
+        resultArr[series-1] = null;
+        if(resultArr[series%2] == null) {
+            compResMap.remove(competition);
+        }
     }
 
     public float getPointsFromComp(Competition competition) throws Exception {

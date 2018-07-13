@@ -11,6 +11,7 @@ public class Result {
 
     private Jumper jumper;
     private Competition competition;
+    private int series;
     private float distance;
     private float wind;
     private float speed;
@@ -22,10 +23,14 @@ public class Result {
     private static final int[] minPointK = {20, 26, 30, 35, 40, 50, 60, 70, 80, 100, 170};
     private static final float[] pointsForMeter = {4.8f, 4.4f, 4.0f, 3.6f, 3.2f, 2.8f, 2.4f, 2.2f, 2.0f, 1.8f, 1.2f};
 
-    public Result(Jumper jumper, Competition competition, float distance, float wind,
+    public Result(Jumper jumper, Competition competition, int series, float distance, float wind,
                   float speed, float[] styleScores, float gateCompensation) {
+        if(series>2 || series<1) {
+            throw new IllegalArgumentException("Series argument must be 1 or 2");
+        }
         this.jumper = jumper;
         this.competition = competition;
+        this.series = series;
         this.distance = distance;
         this.wind = wind;
         this.speed = speed;
@@ -45,6 +50,10 @@ public class Result {
 
     public Competition getCompetition() {
         return competition;
+    }
+
+    public int getSeries() {
+        return series;
     }
 
     public float getDistance() {

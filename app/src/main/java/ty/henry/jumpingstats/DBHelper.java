@@ -76,14 +76,16 @@ public class DBHelper extends SQLiteOpenHelper {
     public void update(Result result) {
         int jumperId = result.getJumper().getId();
         int competitionId = result.getCompetition().getId();
+        int series = result.getSeries();
         ContentValues values = ResultsColumns.values(result);
         SQLiteDatabase db = this.getWritableDatabase();
-        db.update(ResultsColumns.TABLE_NAME, values, ResultsColumns._JUMPER + "=? AND " + ResultsColumns._COMPETITION + "=?",
-                new String[]{Integer.toString(jumperId), Integer.toString(competitionId)});
+        db.update(ResultsColumns.TABLE_NAME, values,
+                ResultsColumns._JUMPER + "=? AND " + ResultsColumns._COMPETITION + "=? AND " + ResultsColumns._SERIES + "=?",
+                new String[]{Integer.toString(jumperId), Integer.toString(competitionId), Integer.toString(series)});
         db.close();
     }
 
-    public void deleteJumper(int id) throws SQLiteException {
+    public void deleteJumper(int id) {
         delete(JumpersColumns.TABLE_NAME, id);
     }
 
@@ -91,7 +93,7 @@ public class DBHelper extends SQLiteOpenHelper {
         deleteAll(JumpersColumns.TABLE_NAME, jumpers);
     }
 
-    public void deleteCompetition(int id) throws SQLiteException {
+    public void deleteCompetition(int id) {
         delete(CompetitionColumns.TABLE_NAME, id);
     }
 
@@ -99,10 +101,13 @@ public class DBHelper extends SQLiteOpenHelper {
         deleteAll(CompetitionColumns.TABLE_NAME, competitions);
     }
 
-    public void deleteResult(int jumperId, int competitionId) throws SQLiteException {
+    public void deleteResult(Result result) {
+        int jumperId = result.getJumper().getId();
+        int competitionId = result.getCompetition().getId();
         SQLiteDatabase db = this.getWritableDatabase();
-        db.delete(ResultsColumns.TABLE_NAME, ResultsColumns._JUMPER + "=? AND " + ResultsColumns._COMPETITION + "=?",
-                new String[]{Integer.toString(jumperId), Integer.toString(competitionId)});
+        db.delete(ResultsColumns.TABLE_NAME,
+                ResultsColumns._JUMPER + "=? AND " + ResultsColumns._COMPETITION + "=? AND " + ResultsColumns._SERIES + "=?",
+                new String[]{Integer.toString(jumperId), Integer.toString(competitionId), Integer.toString(result.getSeries())});
         db.close();
     }
 
@@ -123,6 +128,13 @@ public class DBHelper extends SQLiteOpenHelper {
     private void delete(String table, int id) throws SQLiteException {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(table, BaseColumns._ID + "=?", new String[]{Integer.toString(id)});
+        String resColumn;
+        if(table.equals(JumpersColumns.TABLE_NAME)) {
+            resColumn = ResultsColumns._JUMPER;
+        } else {
+            resColumn = ResultsColumns._COMPETITION;
+        }
+        db.delete(ResultsColumns.TABLE_NAME, resColumn + "=?", new String[]{id+""});
         db.close();
     }
 
@@ -134,6 +146,15 @@ public class DBHelper extends SQLiteOpenHelper {
         }
         where.replace(where.length()-2, where.length(), ")");
         db.delete(table, where.toString(), null);
+
+        String resColumn;
+        if(table.equals(JumpersColumns.TABLE_NAME)) {
+            resColumn = ResultsColumns._JUMPER;
+        } else {
+            resColumn = ResultsColumns._COMPETITION;
+        }
+        where.replace(0, BaseColumns._ID.length(), resColumn);
+        db.delete(ResultsColumns.TABLE_NAME, where.toString(), null);
         db.close();
     }
 
@@ -144,7 +165,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 null, null, null, null);
         if(cursor.moveToFirst()) {
             do {
-                jumpers.add(createJumper(cursor));
+                jumpers.add(createJumper(cursor, db));
             } while(cursor.moveToNext());
         }
         cursor.close();
@@ -179,7 +200,7 @@ public class DBHelper extends SQLiteOpenHelper {
         return seasonToCompetitions;
     }
 
-    private Jumper createJumper(Cursor cursor) {
+    private Jumper createJumper(Cursor cursor, SQLiteDatabase db) {
         String name = cursor.getString(cursor.getColumnIndex(JumpersColumns._NAME));
         String surname = cursor.getString(cursor.getColumnIndex(JumpersColumns._SURNAME));
         String country = cursor.getString(cursor.getColumnIndex(JumpersColumns._COUNTRY));
@@ -189,11 +210,32 @@ public class DBHelper extends SQLiteOpenHelper {
         try {
             Jumper jumper = new Jumper(name, surname, Country.valueOf(country), stringToCalendar(dateString), height);
             jumper.setId(id);
+            setResultsForJumper(jumper, db);
             return jumper;
         } catch (ParseException ex) {
             ex.printStackTrace();
             return null;
         }
+    }
+
+    private void setResultsForJumper(Jumper jumper, SQLiteDatabase db) {
+        Cursor cursor = db.query(ResultsColumns.TABLE_NAME, null,
+                ResultsColumns._JUMPER + "=?", new String[]{jumper.getId()+""},
+                null, null, null);
+        if(cursor.moveToFirst()) {
+            do {
+                String compId = cursor.getString(cursor.getColumnIndex(ResultsColumns._COMPETITION));
+                Cursor compCursor = db.query(CompetitionColumns.TABLE_NAME, null,
+                        CompetitionColumns._ID + "=?", new String[]{compId+""},
+                        null, null, null);
+                compCursor.moveToFirst();
+                Competition competition = createCompetition(compCursor);
+                compCursor.close();
+                Result result = createResult(cursor, jumper, competition);
+                jumper.setResult(competition, result);
+            } while(cursor.moveToNext());
+        }
+        cursor.close();
     }
 
     private Competition createCompetition(Cursor cursor) {
@@ -214,6 +256,19 @@ public class DBHelper extends SQLiteOpenHelper {
             ex.printStackTrace();
             return null;
         }
+    }
+
+    private Result createResult(Cursor cursor, Jumper jumper, Competition competition) {
+        int series = cursor.getInt(cursor.getColumnIndex(ResultsColumns._SERIES));
+        float distance = cursor.getFloat(cursor.getColumnIndex(ResultsColumns._DISTANCE));
+        float wind = cursor.getFloat(cursor.getColumnIndex(ResultsColumns._WIND));
+        float speed = cursor.getFloat(cursor.getColumnIndex(ResultsColumns._SPEED));
+        float gateCompensation = cursor.getFloat(cursor.getColumnIndex(ResultsColumns._GATE_COMPENSATION));
+        float[] marks = new float[5];
+        for(int i=0; i<5; i++) {
+            marks[i] = cursor.getFloat(cursor.getColumnIndex(ResultsColumns._JUDGES[i]));
+        }
+        return new Result(jumper, competition, series, distance, wind, speed, marks, gateCompensation);
     }
 
     public static String calendarToString(Calendar calendar) {
@@ -279,6 +334,7 @@ public class DBHelper extends SQLiteOpenHelper {
         public static String TABLE_NAME = "results";
         public static String _JUMPER = "jumper";
         public static String _COMPETITION = "competition";
+        public static String _SERIES = "series";
         public static String _DISTANCE = "distance";
         public static String _WIND = "wind";
         public static String _SPEED = "speed";
@@ -290,13 +346,14 @@ public class DBHelper extends SQLiteOpenHelper {
             }
         }
         static String createTable = String.format("CREATE TABLE %s(" +
-                "%s INTEGER, %s INTEGER, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL)",
-                TABLE_NAME, _JUMPER, _COMPETITION, _DISTANCE, _WIND, _SPEED, _JUDGES[0], _JUDGES[1], _JUDGES[2], _JUDGES[3],
+                "%s INTEGER, %s INTEGER, %s INTEGER, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL)",
+                TABLE_NAME, _JUMPER, _COMPETITION, _SERIES, _DISTANCE, _WIND, _SPEED, _JUDGES[0], _JUDGES[1], _JUDGES[2], _JUDGES[3],
                 _JUDGES[4], _GATE_COMPENSATION);
         static ContentValues values(Result result) {
             ContentValues values = new ContentValues();
             values.put(_JUMPER, result.getJumper().getId());
             values.put(_COMPETITION, result.getCompetition().getId());
+            values.put(_SERIES, result.getSeries());
             values.put(_DISTANCE, result.getDistance());
             values.put(_WIND, result.getWind());
             values.put(_SPEED, result.getSpeed());

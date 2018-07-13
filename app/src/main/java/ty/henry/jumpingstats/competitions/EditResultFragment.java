@@ -111,7 +111,7 @@ public class EditResultFragment extends Fragment {
         float speed = Float.parseFloat(speedEditText.getText().toString());
         float gateCompensation = Float.parseFloat(gateEditText.getText().toString());
 
-        return new Result(parent.jumper, parent.competition, distance, wind, speed, judgeMarks, gateCompensation);
+        return new Result(parent.jumper, parent.competition, series, distance, wind, speed, judgeMarks, gateCompensation);
     }
 
 
