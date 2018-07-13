@@ -12,6 +12,11 @@
     <string name="headWindPoints">Points for head wind [points per m/s]</string>
     <string name="tailWindPoints">Points for tail wind [points per m/s]</string>
     <string name="date">Date</string>
+    <string name="distance">Distance [m]</string>
+    <string name="wind">Wind [m/s] (negative value - head wind)</string>
+    <string name="speed">Speed [km/h]</string>
+    <string name="judges_marks">Judges marks</string>
+    <string name="gate_compensation">Points for gate compensation</string>
     <string name="open_drawer">Open drawer</string>
     <string name="close_drawer">Close drawer</string>
     <string name="delete">Delete</string>
@@ -19,6 +24,8 @@
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="delete_jumper_message">This jumper will be deleted</string>
+    <string name="series1">1. series</string>
+    <string name="series2">2. series</string>
 
     <string-array name="countries">
         <item>Austria</item>

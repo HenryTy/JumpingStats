@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".competitions.EditResultFragment">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <EditText
+            android:id="@+id/distanceEditText"
+            style="@style/floatEditText"
+            android:hint="@string/distance" />
+
+        <EditText
+            android:id="@+id/windEditText"
+            style="@style/floatEditText"
+            android:hint="@string/wind" />
+
+        <EditText
+            android:id="@+id/speedEditText"
+            style="@style/floatEditText"
+            android:hint="@string/speed" />
+
+        <EditText
+            android:id="@+id/gateEditText"
+            style="@style/floatEditText"
+            android:hint="@string/gate_compensation"
+            android:imeOptions="actionDone"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/judges_marks"
+            android:gravity="center_horizontal"/>
+
+        <TextView
+            android:id="@+id/marksTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:textSize="35sp"/>
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/saveButton"
+            style="@style/saveButtonStyle"/>
+
+    </LinearLayout>
+</ScrollView>

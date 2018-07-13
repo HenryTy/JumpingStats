@@ -21,6 +21,7 @@ import java.util.TreeSet;
 
 import ty.henry.jumpingstats.TextImageAdapter.TextImage;
 import ty.henry.jumpingstats.competitions.AddEditCompetitionFragment;
+import ty.henry.jumpingstats.competitions.AddEditResultsFragment;
 import ty.henry.jumpingstats.competitions.Competition;
 import ty.henry.jumpingstats.competitions.CompetitionDetailsFragment;
 import ty.henry.jumpingstats.competitions.CompetitionsFragment;
@@ -200,7 +201,8 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
                 Fragment fragment = getSupportFragmentManager().findFragmentByTag(VISIBLE_FRAGMENT);
                 int position = 0;
                 if(fragment instanceof AddEditCompetitionFragment ||
-                        fragment instanceof CompetitionsFragment || fragment instanceof CompetitionDetailsFragment) {
+                        fragment instanceof CompetitionsFragment || fragment instanceof CompetitionDetailsFragment ||
+                        fragment instanceof AddEditResultsFragment) {
                     position = 1;
                 }
                 else if(fragment instanceof JumpersFragment ||

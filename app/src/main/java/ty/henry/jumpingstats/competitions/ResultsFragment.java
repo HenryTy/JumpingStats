@@ -42,6 +42,11 @@ public class ResultsFragment extends Fragment {
         LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
         recyclerView.setLayoutManager(layoutManager);
         ResultsAdapter resultsAdapter = new ResultsAdapter(parent.competition, jumpers);
+        resultsAdapter.setListener(position -> {
+            AddEditResultsFragment fragment = new AddEditResultsFragment();
+            fragment.setData(parent.competition, jumpers.get(position));
+            parent.listener.openFragment(fragment, true);
+        });
         recyclerView.setAdapter(resultsAdapter);
         return fragmentView;
     }
