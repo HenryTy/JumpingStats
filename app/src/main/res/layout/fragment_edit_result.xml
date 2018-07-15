@@ -48,5 +48,10 @@
             android:id="@+id/saveButton"
             style="@style/saveButtonStyle"/>
 
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/deleteButton"
+            style="@style/deleteButtonStyle"
+            android:layout_gravity="start|bottom"/>
+
     </LinearLayout>
 </ScrollView>

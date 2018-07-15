@@ -24,6 +24,10 @@
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="delete_jumper_message">This jumper will be deleted</string>
+    <string name="delete_competition_message">This competition will be deleted</string>
+    <string name="delete_result_message">This result will be deleted</string>
+    <string name="saved">Saved</string>
+    <string name="deleted">Deleted</string>
     <string name="series1">1. series</string>
     <string name="series2">2. series</string>
 
@@ -54,6 +58,4 @@
         <item>Jumpers</item>
     </string-array>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

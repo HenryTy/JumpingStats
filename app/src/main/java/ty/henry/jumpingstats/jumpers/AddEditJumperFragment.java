@@ -92,7 +92,7 @@ public class AddEditJumperFragment extends Fragment {
         surnameEditText = fragmentView.findViewById(R.id.surnameEditText);
 
         heightEditText = fragmentView.findViewById(R.id.heightEditText);
-        Pattern heightPattern = Pattern.compile("[12]?\\.?[0-9]{0,2}");
+        Pattern heightPattern = Pattern.compile("[12]|([12]\\.[0-9]{0,2})");
         InputFilter heightInputFilter = new PatternInputFilter(heightPattern);
         heightEditText.setFilters(new InputFilter[]{heightInputFilter});
 
@@ -220,7 +220,7 @@ public class AddEditJumperFragment extends Fragment {
                     jumpersFragmentListener.onJumperUpdated(jumper);
                     jumperDetailsFragment.setJumper(jumper);
             }
-            Toast.makeText(getActivity(), "Saved", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), R.string.saved, Toast.LENGTH_SHORT).show();
             if(getActivity()!=null) {
                 getActivity().onBackPressed();
             }

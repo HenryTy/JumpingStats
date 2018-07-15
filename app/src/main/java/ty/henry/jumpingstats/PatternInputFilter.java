@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 
 public class PatternInputFilter implements InputFilter {
 
-    public static final Pattern DISTANCE_PATTERN = Pattern.compile("[0-9]{0,3}\\.?[05]?");
+    public static final Pattern DISTANCE_PATTERN = Pattern.compile("[0-9]{0,3}|([0-9]{2,3}\\.[05]?)");
     public static final Pattern DISTANCE_END_PATTERN = Pattern.compile("[0-9]{2,3}(\\.[05])?");
 
     private Pattern pattern;

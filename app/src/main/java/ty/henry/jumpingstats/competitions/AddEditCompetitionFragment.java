@@ -38,6 +38,7 @@ public class AddEditCompetitionFragment extends Fragment {
     private DatePicker datePicker;
     private FloatingActionButton saveButton;
     private Competition compToEdit;
+    private CompetitionDetailsFragment competitionDetailsFragment;
     private CompetitionsFragment.CompetitionsFragmentListener competitionsFragmentListener;
     private TextWatcher textWatcher = new TextWatcher() {
 
@@ -73,8 +74,9 @@ public class AddEditCompetitionFragment extends Fragment {
 
     }
 
-    public void editCompetition(Competition competition) {
+    public void editCompetition(Competition competition, CompetitionDetailsFragment competitionDetailsFragment) {
         this.compToEdit = competition;
+        this.competitionDetailsFragment = competitionDetailsFragment;
     }
 
     public void setListener(CompetitionsFragment.CompetitionsFragmentListener listener) {
@@ -97,7 +99,7 @@ public class AddEditCompetitionFragment extends Fragment {
 
         headWindEditText = fragmentView.findViewById(R.id.headWindEditText);
         tailWindEditText = fragmentView.findViewById(R.id.tailWindEditText);
-        Pattern windPointsPattern = Pattern.compile("[0-9]*\\.?[0-9]{0,2}");
+        Pattern windPointsPattern = Pattern.compile("[0-9]*|([0-9]+\\.[0-9]{0,2})");
         InputFilter windPointsFilter = new PatternInputFilter(windPointsPattern);
         headWindEditText.setFilters(new InputFilter[]{windPointsFilter});
         tailWindEditText.setFilters(new InputFilter[]{windPointsFilter});
@@ -118,15 +120,15 @@ public class AddEditCompetitionFragment extends Fragment {
             }
         });
 
-        if(compToEdit!=null) {
-            fillWithDataToEdit();
-        }
-
         cityEditText.addTextChangedListener(textWatcher);
         pointKEditText.addTextChangedListener(textWatcher);
         hillSizeEditText.addTextChangedListener(textWatcher);
         headWindEditText.addTextChangedListener(textWatcher);
         tailWindEditText.addTextChangedListener(textWatcher);
+
+        if(compToEdit!=null) {
+            fillWithDataToEdit();
+        }
         return fragmentView;
     }
 
@@ -191,8 +193,9 @@ public class AddEditCompetitionFragment extends Fragment {
                     break;
                 case UPDATE:
                     competitionsFragmentListener.onCompetitionUpdated(competition);
+                    competitionDetailsFragment.setCompetition(competition);
             }
-            Toast.makeText(getActivity(), "Saved", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), R.string.saved, Toast.LENGTH_SHORT).show();
             if(getActivity()!=null) {
                 getActivity().onBackPressed();
             }

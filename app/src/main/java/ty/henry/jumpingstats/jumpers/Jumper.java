@@ -36,6 +36,10 @@ public class Jumper implements TextImageAdapter.TextImage {
 
     public void setCompResMap(HashMap<Competition, Result[]> compResMap) {
         this.compResMap = compResMap;
+        for(Result[] res : compResMap.values()) {
+            if(res[0] != null) res[0].setJumper(this);
+            if(res[1] != null) res[1].setJumper(this);
+        }
     }
 
     public int getId() {
@@ -100,6 +104,19 @@ public class Jumper implements TextImageAdapter.TextImage {
         resultArr[series-1] = null;
         if(resultArr[series%2] == null) {
             compResMap.remove(competition);
+        }
+    }
+
+    public void removeResultsFromCompetition(Competition competition) {
+        compResMap.remove(competition);
+    }
+
+    public void onCompetitionUpdated(Competition oldComp, Competition updatedComp) {
+        Result[] results = compResMap.remove(oldComp);
+        if(results != null) {
+            compResMap.put(updatedComp, results);
+            if(results[0] != null) results[0].setCompetition(updatedComp);
+            if(results[1] != null) results[1].setCompetition(updatedComp);
         }
     }
 

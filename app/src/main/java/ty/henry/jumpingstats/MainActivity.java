@@ -134,6 +134,9 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
             seasonToCompetitions.remove(competition.getSeason());
         }
         competitionsMapToList();
+        for(Jumper j : jumpers) {
+            j.removeResultsFromCompetition(competition);
+        }
     }
 
     public void onCompetitionsDeleted(Set<Competition> competitions) {
@@ -142,6 +145,9 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
             set.remove(competition);
             if(set.isEmpty()) {
                 seasonToCompetitions.remove(competition.getSeason());
+            }
+            for(Jumper j : jumpers) {
+                j.removeResultsFromCompetition(competition);
             }
         }
         competitionsMapToList();
@@ -156,6 +162,9 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
                     set.remove(c);
                     if(set.isEmpty()) {
                         seasonToCompetitions.remove(c.getSeason());
+                    }
+                    for(Jumper j : jumpers) {
+                        j.onCompetitionUpdated(c, competition);
                     }
                     break outerloop;
                 }

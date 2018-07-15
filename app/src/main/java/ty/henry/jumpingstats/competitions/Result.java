@@ -44,8 +44,16 @@ public class Result {
         this.pForM = pointsForMeter[i-1];
     }
 
+    public void setJumper(Jumper jumper) {
+        this.jumper = jumper;
+    }
+
     public Jumper getJumper() {
         return jumper;
+    }
+
+    public void setCompetition(Competition competition) {
+        this.competition = competition;
     }
 
     public Competition getCompetition() {
