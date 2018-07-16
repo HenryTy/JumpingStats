@@ -44,14 +44,21 @@
             android:gravity="center_horizontal"
             android:textSize="35sp"/>
 
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/saveButton"
-            style="@style/saveButtonStyle"/>
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/deleteButton"
-            style="@style/deleteButtonStyle"
-            android:layout_gravity="start|bottom"/>
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/saveButton"
+                style="@style/saveButtonStyle"/>
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/deleteButton"
+                style="@style/deleteButtonStyle"
+                android:layout_gravity="start"/>
+
+        </FrameLayout>
 
     </LinearLayout>
+
 </ScrollView>

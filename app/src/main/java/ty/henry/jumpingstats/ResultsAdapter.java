@@ -57,7 +57,7 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.ViewHold
         textView2.setText(jumperList.get(position).getText()[0]);
         try {
             float points = jumperList.get(position).getPointsFromComp(competition);
-            textView3.setText(Float.toString(points));
+            textView3.setText(String.format("%.1f", points));
         } catch (Exception ex) {
             textView3.setText("-");
         }

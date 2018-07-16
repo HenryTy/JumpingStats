@@ -158,6 +158,13 @@ public class DBHelper extends SQLiteOpenHelper {
         db.close();
     }
 
+    private String joinedResultsAndCompetitions() {
+        String compId = CompetitionColumns.tableColumn(CompetitionColumns._ID);
+        String resCompId = ResultsColumns.tableColumn(ResultsColumns._COMPETITION);
+        return  ResultsColumns.TABLE_NAME + " JOIN " + CompetitionColumns.TABLE_NAME + " ON " +
+                compId + "=" + resCompId;
+    }
+
     public ArrayList<Jumper> getAllJumpers() {
         ArrayList<Jumper> jumpers = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -219,18 +226,12 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     private void setResultsForJumper(Jumper jumper, SQLiteDatabase db) {
-        Cursor cursor = db.query(ResultsColumns.TABLE_NAME, null,
-                ResultsColumns._JUMPER + "=?", new String[]{jumper.getId()+""},
-                null, null, null);
+        Cursor cursor = db.query(joinedResultsAndCompetitions(), null,
+                ResultsColumns.tableColumn(ResultsColumns._JUMPER) + "=?",
+                new String[] {jumper.getId()+""}, null, null, null);
         if(cursor.moveToFirst()) {
             do {
-                String compId = cursor.getString(cursor.getColumnIndex(ResultsColumns._COMPETITION));
-                Cursor compCursor = db.query(CompetitionColumns.TABLE_NAME, null,
-                        CompetitionColumns._ID + "=?", new String[]{compId+""},
-                        null, null, null);
-                compCursor.moveToFirst();
-                Competition competition = createCompetition(compCursor);
-                compCursor.close();
+                Competition competition = createCompetition(cursor);
                 Result result = createResult(cursor, jumper, competition);
                 jumper.setResult(competition, result);
             } while(cursor.moveToNext());
@@ -293,6 +294,9 @@ public class DBHelper extends SQLiteOpenHelper {
         static String createTable = String.format("CREATE TABLE %s(%s INTEGER PRIMARY KEY AUTOINCREMENT," +
                 " %s TEXT, %s TEXT, %s TEXT, %s TEXT, %s REAL)", TABLE_NAME, _ID, _NAME, _SURNAME, _COUNTRY,
                 _DATE_OF_BIRTH, _HEIGHT);
+        static String tableColumn(String columnName) {
+            return TABLE_NAME + "." + columnName;
+        }
         static ContentValues values(Jumper jumper) {
             ContentValues values = new ContentValues();
             values.put(_NAME, jumper.getName());
@@ -316,6 +320,9 @@ public class DBHelper extends SQLiteOpenHelper {
         static String createTable = String.format("CREATE TABLE %s(%s INTEGER PRIMARY KEY AUTOINCREMENT," +
                         " %s TEXT, %s TEXT, %s REAL, %s REAL, %s REAL, %s REAL, %s TEXT)", TABLE_NAME, _ID, _CITY, _COUNTRY,
                 _POINT_K, _HILL_SIZE, _HEAD_WIND_POINTS, _TAIL_WIND_POINTS, _DATE);
+        static String tableColumn(String columnName) {
+            return TABLE_NAME + "." + columnName;
+        }
         static ContentValues values(Competition competition) {
             ContentValues values = new ContentValues();
             values.put(_CITY, competition.getCity());
@@ -349,6 +356,9 @@ public class DBHelper extends SQLiteOpenHelper {
                 "%s INTEGER, %s INTEGER, %s INTEGER, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL)",
                 TABLE_NAME, _JUMPER, _COMPETITION, _SERIES, _DISTANCE, _WIND, _SPEED, _JUDGES[0], _JUDGES[1], _JUDGES[2], _JUDGES[3],
                 _JUDGES[4], _GATE_COMPENSATION);
+        static String tableColumn(String columnName) {
+            return TABLE_NAME + "." + columnName;
+        }
         static ContentValues values(Result result) {
             ContentValues values = new ContentValues();
             values.put(_JUMPER, result.getJumper().getId());
