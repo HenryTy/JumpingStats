@@ -81,7 +81,8 @@ public class Result {
     }
 
     public float pointsForDistance() {
-        return 60 + pForM*(distance - competition.getPointK());
+        float pointsForAchievePointK = pForM == 1.2f ? 120f : 60f;
+        return pointsForAchievePointK + pForM*(distance - competition.getPointK());
     }
 
     public float pointsForStyle() {
