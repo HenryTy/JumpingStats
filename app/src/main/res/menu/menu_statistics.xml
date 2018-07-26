@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/chartsData"
+        android:title="@string/charts_data"/>
+
+    <item
+        android:id="@+id/tableData"
+        android:title="@string/table_data"/>
+
+</menu>

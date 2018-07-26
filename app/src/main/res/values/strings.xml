@@ -30,6 +30,8 @@
     <string name="deleted">Deleted</string>
     <string name="series1">1. series</string>
     <string name="series2">2. series</string>
+    <string name="charts_data">Data for charts</string>
+    <string name="table_data">Data for table</string>
 
     <string-array name="countries">
         <item>Austria</item>
@@ -57,5 +59,30 @@
         <item>Competitions</item>
         <item>Jumpers</item>
     </string-array>
+
+    <string name="axes_options_title">Data</string>
+    <string name="x_axis_options_title">X axis</string>
+    <string name="x_axis_default">Competition</string>
+    <string-array name="x_axis_options">
+        <item>@string/x_axis_default</item>
+        <item>Jumper\'s age</item>
+        <item>Jumper\'s height</item>
+    </string-array>
+
+    <string name="y_axis_options_title">Y axis</string>
+    <string name="y_axis_default">Distance</string>
+    <string-array name="y_axis_options">
+        <item>@string/y_axis_default</item>
+        <item>Distance from point K</item>
+        <item>Points for distance</item>
+        <item>Wind speed</item>
+        <item>Points for wind</item>
+        <item>Jumper\'s speed</item>
+        <item>Average mark for style</item>
+        <item>Points</item>
+    </string-array>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 
 </resources>

@@ -30,9 +30,10 @@ import ty.henry.jumpingstats.jumpers.AddEditJumperFragment;
 import ty.henry.jumpingstats.jumpers.Jumper;
 import ty.henry.jumpingstats.jumpers.JumperDetailsFragment;
 import ty.henry.jumpingstats.jumpers.JumpersFragment;
+import ty.henry.jumpingstats.statistics.StatsFragment;
 
 public class MainActivity extends AppCompatActivity implements JumpersFragment.JumpersFragmentListener,
-        CompetitionsFragment.CompetitionsFragmentListener {
+        CompetitionsFragment.CompetitionsFragmentListener, StatsFragment.StatsFragmentListener {
 
     public static final String VISIBLE_FRAGMENT = "visible_fragment";
 
@@ -50,11 +51,12 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        GetTask getTask = new GetTask();
-        getTask.execute();
+        getDataFromDB();
 
         prepareDrawer();
-        openFragment(new AddEditJumperFragment(), false);
+        StatsFragment statsFragment = new StatsFragment();
+        statsFragment.setListener(this);
+        openFragment(statsFragment, false);
         getSupportActionBar().setTitle(drawerOptions[0]);
     }
 
@@ -70,6 +72,13 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
             return true;
         }
         return false;
+    }
+
+    private void getDataFromDB() {
+        DBHelper dbHelper = new DBHelper(this);
+        jumpers = dbHelper.getAllJumpers();
+        seasonToCompetitions = dbHelper.getSeasonToCompetitionsMap();
+        competitionsMapToList();
     }
 
     public void openFragment(Fragment fragment, boolean backStack) {
@@ -193,8 +202,8 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
                         ((JumpersFragment) fragment).setListener(MainActivity.this);
                         break;
                     default:
-                        fragment = new JumpersFragment();
-                        ((JumpersFragment) fragment).setListener(MainActivity.this);
+                        fragment = new StatsFragment();
+                        ((StatsFragment) fragment).setListener(MainActivity.this);
                 }
                 openFragment(fragment, true);
                 drawerLayout.closeDrawer(drawerList);
@@ -235,18 +244,5 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
             seasonsAndCompetitions.add(season);
             seasonsAndCompetitions.addAll(seasonToCompetitions.get(season));
         }
-    }
-
-    private class GetTask extends AsyncTask<Void, Void, Boolean> {
-
-        @Override
-        protected Boolean doInBackground(Void... params) {
-            DBHelper dbHelper = new DBHelper(MainActivity.this);
-            jumpers = dbHelper.getAllJumpers();
-            seasonToCompetitions = dbHelper.getSeasonToCompetitionsMap();
-            competitionsMapToList();
-            return true;
-        }
-
     }
 }

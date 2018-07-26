@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory
+        android:title="@string/axes_options_title">
+
+        <ListPreference
+            android:key="pref_x_axis"
+            android:title="@string/x_axis_options_title"
+            android:dialogTitle="@string/x_axis_options_title"
+            android:entries="@array/x_axis_options"
+            android:entryValues="@array/x_axis_options"
+            android:defaultValue="@string/x_axis_default"/>
+
+        <ListPreference
+            android:key="pref_y_axis"
+            android:title="@string/y_axis_options_title"
+            android:dialogTitle="@string/y_axis_options_title"
+            android:entries="@array/y_axis_options"
+            android:entryValues="@array/y_axis_options"
+            android:defaultValue="@string/y_axis_default"/>
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
