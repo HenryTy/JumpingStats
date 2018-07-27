@@ -82,6 +82,11 @@
         <item>Points</item>
     </string-array>
 
+    <string name="jumpers_options_title">Jumpers</string>
+    <string name="competition_options_title">Competitions</string>
+    <string name="multi_select_pref_summary">%d selected</string>
+    <string name="too_many_jumpers_selected">You can select up to %d jumpers</string>
+
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 

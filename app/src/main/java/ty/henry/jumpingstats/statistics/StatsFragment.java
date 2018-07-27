@@ -1,11 +1,13 @@
 package ty.henry.jumpingstats.statistics;
 
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.support.v7.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -14,6 +16,8 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -23,6 +27,8 @@ import ty.henry.jumpingstats.competitions.Season;
 import ty.henry.jumpingstats.jumpers.Jumper;
 
 public class StatsFragment extends Fragment {
+
+    public static final int MAX_JUMPERS = 5;
 
     private StatsFragmentListener statsFragmentListener;
     ArrayList<Jumper> allJumpers;
@@ -44,7 +50,6 @@ public class StatsFragment extends Fragment {
         this.statsFragmentListener = listener;
     }
 
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -54,7 +59,38 @@ public class StatsFragment extends Fragment {
 
         allJumpers = statsFragmentListener.getJumpersList();
         seasonToCompetitions = statsFragmentListener.getSeasonToCompetitionsMap();
+        getDataFromSharedPreferences();
         return fragmentView;
+    }
+
+
+    private void getDataFromSharedPreferences() {
+        isJumperSelected = new boolean[allJumpers.size()];
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        Set<String> selectedJumpers = preferences.getStringSet(ChartsDataFragment.JUMPERS_PREF_KEY,
+                Collections.emptySet());
+        for(int i=0; i<allJumpers.size(); i++) {
+            if(selectedJumpers.contains(allJumpers.get(i).getId()+"")) {
+                isJumperSelected[i] = true;
+            }
+        }
+
+        isCompetitionSelected = new TreeMap<>();
+        for(Season season : seasonToCompetitions.keySet()) {
+            ArrayList<Boolean> isSelected = new ArrayList<>();
+            Set<String> selectedCompetitions = preferences
+                    .getStringSet(ChartsDataFragment.SEASON_PREF_KEY(season),
+                            Collections.emptySet());
+            for(Competition comp : seasonToCompetitions.get(season)) {
+                if(selectedCompetitions.contains(comp.getId()+"")) {
+                    isSelected.add(true);
+                }
+                else {
+                    isSelected.add(false);
+                }
+            }
+            isCompetitionSelected.put(season, isSelected);
+        }
     }
 
     @Override
@@ -73,6 +109,7 @@ public class StatsFragment extends Fragment {
         switch (item.getItemId()) {
             case R.id.chartsData:
                 ChartsDataFragment chartsDataFragment = new ChartsDataFragment();
+                chartsDataFragment.setJumpersAndCompetitions(allJumpers, seasonToCompetitions);
                 statsFragmentListener.openFragment(chartsDataFragment, true);
                 return true;
             case R.id.tableData:

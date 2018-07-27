@@ -1,5 +1,6 @@
 package ty.henry.jumpingstats;
 
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -8,6 +9,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.preference.PreferenceManager;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -15,6 +17,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -30,6 +33,7 @@ import ty.henry.jumpingstats.jumpers.AddEditJumperFragment;
 import ty.henry.jumpingstats.jumpers.Jumper;
 import ty.henry.jumpingstats.jumpers.JumperDetailsFragment;
 import ty.henry.jumpingstats.jumpers.JumpersFragment;
+import ty.henry.jumpingstats.statistics.ChartsDataFragment;
 import ty.henry.jumpingstats.statistics.StatsFragment;
 
 public class MainActivity extends AppCompatActivity implements JumpersFragment.JumpersFragmentListener,
@@ -100,10 +104,37 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
 
     public void onJumperDeleted(Jumper jumper) {
         jumpers.remove(jumper);
+        removeJumperFromSharedPreferences(jumper);
+    }
+
+    private void removeJumperFromSharedPreferences(Jumper jumper) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        Set<String> selectedJumpers = sharedPreferences.getStringSet(ChartsDataFragment.JUMPERS_PREF_KEY,
+                Collections.emptySet());
+        if(selectedJumpers.contains(jumper.getId()+"")) {
+            selectedJumpers.remove(jumper.getId()+"");
+            sharedPreferences.edit().putStringSet(ChartsDataFragment.JUMPERS_PREF_KEY, selectedJumpers).apply();
+        }
+    }
+
+    private void removeCompetitionFromSharedPreferences(Competition competition) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        Set<String> selectedCompetitions = sharedPreferences
+                .getStringSet(ChartsDataFragment.SEASON_PREF_KEY(competition.getSeason()),
+                        Collections.emptySet());
+        if(selectedCompetitions.contains(competition.getId()+"")) {
+            selectedCompetitions.remove(competition.getId()+"");
+            sharedPreferences.edit()
+                    .putStringSet(ChartsDataFragment.SEASON_PREF_KEY(competition.getSeason()),
+                            selectedCompetitions).apply();
+        }
     }
 
     public void onJumpersDeleted(Set<Jumper> delJumps) {
         jumpers.removeAll(delJumps);
+        for(Jumper j : delJumps) {
+            removeJumperFromSharedPreferences(j);
+        }
     }
 
     public void onJumperUpdated(Jumper jumper) {
@@ -146,6 +177,7 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
         for(Jumper j : jumpers) {
             j.removeResultsFromCompetition(competition);
         }
+        removeCompetitionFromSharedPreferences(competition);
     }
 
     public void onCompetitionsDeleted(Set<Competition> competitions) {
@@ -158,6 +190,7 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
             for(Jumper j : jumpers) {
                 j.removeResultsFromCompetition(competition);
             }
+            removeCompetitionFromSharedPreferences(competition);
         }
         competitionsMapToList();
     }
@@ -175,6 +208,7 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
                     for(Jumper j : jumpers) {
                         j.onCompetitionUpdated(c, competition);
                     }
+                    removeCompetitionFromSharedPreferences(c);
                     break outerloop;
                 }
             }
