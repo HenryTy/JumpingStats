@@ -1,6 +1,7 @@
 package ty.henry.jumpingstats.competitions;
 
 
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Objects;
 
@@ -116,6 +117,11 @@ public class Competition implements TextImageAdapter.TextImage, Comparable<Compe
 
     public int compareTo(Competition other) {
         return compareDates(other.getDate(), this.getDate());
+    }
+
+    public String getShortDate() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yy");
+        return dateFormat.format(date.getTime());
     }
 
 }

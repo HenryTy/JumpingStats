@@ -16,10 +16,12 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.stream.IntStream;
 
 import ty.henry.jumpingstats.R;
 import ty.henry.jumpingstats.competitions.Competition;
@@ -28,13 +30,25 @@ import ty.henry.jumpingstats.jumpers.Jumper;
 
 public class StatsFragment extends Fragment {
 
+    interface YValueGetter {
+        float getValue(Jumper jumper, Competition competition, int series) throws Exception;
+    }
+
+    interface XValueGetter {
+        float getValue(Jumper jumper);
+    }
+
     public static final int MAX_JUMPERS = 5;
 
     private StatsFragmentListener statsFragmentListener;
     ArrayList<Jumper> allJumpers;
-    boolean[] isJumperSelected;
+    ArrayList<Jumper> selectedJumpersList;
     TreeMap<Season, TreeSet<Competition>> seasonToCompetitions;
-    TreeMap<Season, ArrayList<Boolean>> isCompetitionSelected;
+    ArrayList<Competition> selectedCompetitionsList;
+    YValueGetter yValueGetter;
+    XValueGetter xValueGetter;
+    String yAxisTitle;
+    String xAxisTitle;
 
     public interface StatsFragmentListener {
         void openFragment(Fragment fragment, boolean backStack);
@@ -65,32 +79,80 @@ public class StatsFragment extends Fragment {
 
 
     private void getDataFromSharedPreferences() {
-        isJumperSelected = new boolean[allJumpers.size()];
+        selectedJumpersList = new ArrayList<>();
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
         Set<String> selectedJumpers = preferences.getStringSet(ChartsDataFragment.JUMPERS_PREF_KEY,
                 Collections.emptySet());
         for(int i=0; i<allJumpers.size(); i++) {
             if(selectedJumpers.contains(allJumpers.get(i).getId()+"")) {
-                isJumperSelected[i] = true;
+                selectedJumpersList.add(allJumpers.get(i));
             }
         }
 
-        isCompetitionSelected = new TreeMap<>();
+        selectedCompetitionsList = new ArrayList<>();
         for(Season season : seasonToCompetitions.keySet()) {
-            ArrayList<Boolean> isSelected = new ArrayList<>();
             Set<String> selectedCompetitions = preferences
                     .getStringSet(ChartsDataFragment.SEASON_PREF_KEY(season),
                             Collections.emptySet());
             for(Competition comp : seasonToCompetitions.get(season)) {
                 if(selectedCompetitions.contains(comp.getId()+"")) {
-                    isSelected.add(true);
-                }
-                else {
-                    isSelected.add(false);
+                    selectedCompetitionsList.add(comp);
                 }
             }
-            isCompetitionSelected.put(season, isSelected);
         }
+        Collections.reverse(selectedCompetitionsList);
+
+        String xOption = preferences.getString(ChartsDataFragment.X_AXIS_PREF_KEY, getString(R.string.x_axis_default));
+        String[] xAxisOptions = getResources().getStringArray(R.array.x_axis_options);
+        if(xOption.equals(xAxisOptions[1])) {
+            xValueGetter = Jumper::getAge;
+        }
+        else if(xOption.equals(xAxisOptions[2])) {
+            xValueGetter = Jumper::getHeight;
+        }
+        else {
+            xValueGetter = null;
+        }
+
+        String yOption = preferences.getString(ChartsDataFragment.Y_AXIS_PREF_KEY, getString(R.string.y_axis_default));
+        String[] yAxisOptions = getResources().getStringArray(R.array.y_axis_options);
+        if(yOption.equals(yAxisOptions[0])) {
+            yValueGetter = ((jumper, competition, series) -> jumper.getResults(competition)[series-1].getDistance());
+        }
+        else if(yOption.equals(yAxisOptions[1])) {
+            yValueGetter = ((jumper, competition, series) ->
+                    jumper.getResults(competition)[series-1].getDistance() - competition.getPointK());
+        }
+        else if(yOption.equals(yAxisOptions[2])) {
+            yValueGetter = ((jumper, competition, series) ->
+                    jumper.getResults(competition)[series-1].pointsForDistance());
+        }
+        else if(yOption.equals(yAxisOptions[3])) {
+            yValueGetter = ((jumper, competition, series) ->
+                    jumper.getResults(competition)[series-1].getWind());
+        }
+        else if(yOption.equals(yAxisOptions[4])) {
+            yValueGetter = ((jumper, competition, series) ->
+                    jumper.getResults(competition)[series-1].pointsForWind());
+        }
+        else if(yOption.equals(yAxisOptions[5])) {
+            yValueGetter = ((jumper, competition, series) ->
+                    jumper.getResults(competition)[series-1].getSpeed());
+        }
+        else if(yOption.equals(yAxisOptions[6])) {
+            yValueGetter = ((jumper, competition, series) -> {
+                float[] marks = jumper.getResults(competition)[series-1].getStyleScores();
+                return (float) IntStream.range(0, marks.length)
+                        .mapToDouble(i -> marks[i]).average().getAsDouble();
+            });
+        }
+        else if(yOption.equals(yAxisOptions[7])) {
+            yValueGetter = ((jumper, competition, series) ->
+                    jumper.getResults(competition)[series-1].points());
+        }
+
+        xAxisTitle = xOption;
+        yAxisTitle = yOption;
     }
 
     @Override
