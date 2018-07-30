@@ -1,7 +1,6 @@
 package ty.henry.jumpingstats;
 
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
@@ -18,6 +17,7 @@ import android.widget.ListView;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -112,8 +112,13 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
         Set<String> selectedJumpers = sharedPreferences.getStringSet(ChartsDataFragment.JUMPERS_PREF_KEY,
                 Collections.emptySet());
         if(selectedJumpers.contains(jumper.getId()+"")) {
-            selectedJumpers.remove(jumper.getId()+"");
-            sharedPreferences.edit().putStringSet(ChartsDataFragment.JUMPERS_PREF_KEY, selectedJumpers).apply();
+            Set<String> newSelectedJumpers = new HashSet<>();
+            for(String s : selectedJumpers) {
+                if(!s.equals(jumper.getId()+"")) {
+                    newSelectedJumpers.add(s);
+                }
+            }
+            sharedPreferences.edit().putStringSet(ChartsDataFragment.JUMPERS_PREF_KEY, newSelectedJumpers).apply();
         }
     }
 
@@ -123,10 +128,15 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
                 .getStringSet(ChartsDataFragment.SEASON_PREF_KEY(competition.getSeason()),
                         Collections.emptySet());
         if(selectedCompetitions.contains(competition.getId()+"")) {
-            selectedCompetitions.remove(competition.getId()+"");
+            Set<String> newSelectedCompetitions = new HashSet<>();
+            for(String s : selectedCompetitions) {
+                if(!s.equals(competition.getId()+"")) {
+                    newSelectedCompetitions.add(s);
+                }
+            }
             sharedPreferences.edit()
                     .putStringSet(ChartsDataFragment.SEASON_PREF_KEY(competition.getSeason()),
-                            selectedCompetitions).apply();
+                            newSelectedCompetitions).apply();
         }
     }
 

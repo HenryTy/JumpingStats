@@ -11,20 +11,14 @@
         android:id="@+id/yTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="14sp"/>
+        android:textSize="14sp"
+        android:textColor="#000000"/>
 
     <com.github.mikephil.charting.charts.LineChart
         android:id="@+id/lineChart"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="4" />
-
-    <TextView
-        android:id="@+id/xTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="14sp"
-        android:layout_gravity="center_horizontal"/>
 
     <SeekBar
         android:id="@+id/lineChartSeekBar"
