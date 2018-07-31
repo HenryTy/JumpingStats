@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.github.mikephil.charting.charts.Chart;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.LegendEntry;
@@ -39,7 +40,7 @@ public class LineChartFragment extends Fragment {
     private StatsFragment statsFragment;
     private LineChart lineChart;
     private int entriesCount;
-    private int[] colors = new int[]{Color.BLACK, Color.RED, Color.BLUE, Color.GREEN, Color.GRAY};
+    static int[] colors = new int[]{Color.BLACK, Color.RED, Color.BLUE, Color.GREEN, Color.GRAY};
 
     private static final int LABEL_COUNT = 6;
 
@@ -128,7 +129,7 @@ public class LineChartFragment extends Fragment {
         else {
             legendEntries = new LegendEntry[0];
             StatsFragment.XValueGetter xValueGetter = statsFragment.xValueGetter;
-            Map<Float, List<Jumper>> xValueToJumpers = statsFragment.selectedJumpersList.stream()
+            Map<Float, List<Jumper>> xValueToJumpers = jumpers.stream()
                     .collect(groupingBy(xValueGetter::getValue));
             ArrayList<Float> xValues = new ArrayList<>(xValueToJumpers.keySet());
             Collections.sort(xValues);
@@ -174,24 +175,7 @@ public class LineChartFragment extends Fragment {
         lineChart.invalidate();
 
         SeekBar seekBar = fragmentView.findViewById(R.id.lineChartSeekBar);
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                int maxBegin = entriesCount - LABEL_COUNT;
-                int begin = progress*maxBegin/100;
-                setDataRange(begin);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
+        seekBar.setOnSeekBarChangeListener(getChartSeekBarListener(lineChart, entriesCount, LABEL_COUNT));
 
         return fragmentView;
     }
@@ -220,13 +204,33 @@ public class LineChartFragment extends Fragment {
         return results.stream();
     }
 
+    static SeekBar.OnSeekBarChangeListener getChartSeekBarListener(Chart chart, int entriesCount, int labelCount) {
+        return new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                int maxBegin = entriesCount - labelCount;
+                int begin = Math.round(((float) progress*maxBegin)/100);
+                setDataRange(chart, begin, labelCount);
+            }
 
-    private void setDataRange(int begin) {
-        XAxis xAxis = lineChart.getXAxis();
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        };
+    }
+
+    static void setDataRange(Chart chart, int begin, int count) {
+        XAxis xAxis = chart.getXAxis();
         xAxis.setAxisMinimum(begin);
-        xAxis.setAxisMaximum(begin+LABEL_COUNT-1);
-        lineChart.notifyDataSetChanged();
-        lineChart.invalidate();
+        xAxis.setAxisMaximum(begin+count-1);
+        chart.notifyDataSetChanged();
+        chart.invalidate();
     }
 
 }

@@ -189,12 +189,17 @@ public class StatsFragment extends Fragment {
 
         @Override
         public Fragment getItem(int position) {
-            return new LineChartFragment();
+            switch (position) {
+                case 1:
+                    return new BarChartFragment();
+                default:
+                    return new LineChartFragment();
+            }
         }
 
         @Override
         public int getCount() {
-            return 1;
+            return 2;
         }
     }
 
