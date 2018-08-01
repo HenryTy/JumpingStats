@@ -175,6 +175,9 @@ public class StatsFragment extends Fragment {
                 statsFragmentListener.openFragment(chartsDataFragment, true);
                 return true;
             case R.id.tableData:
+                TableDataFragment tableDataFragment = new TableDataFragment();
+                tableDataFragment.setJumpersAndCompetitions(allJumpers, seasonToCompetitions);
+                statsFragmentListener.openFragment(tableDataFragment, true);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -192,6 +195,8 @@ public class StatsFragment extends Fragment {
             switch (position) {
                 case 1:
                     return new BarChartFragment();
+                case 2:
+                    return new TableFragment();
                 default:
                     return new LineChartFragment();
             }
@@ -199,7 +204,7 @@ public class StatsFragment extends Fragment {
 
         @Override
         public int getCount() {
-            return 2;
+            return 3;
         }
     }
 

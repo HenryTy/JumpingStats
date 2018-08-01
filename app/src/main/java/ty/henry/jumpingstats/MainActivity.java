@@ -35,6 +35,7 @@ import ty.henry.jumpingstats.jumpers.JumperDetailsFragment;
 import ty.henry.jumpingstats.jumpers.JumpersFragment;
 import ty.henry.jumpingstats.statistics.ChartsDataFragment;
 import ty.henry.jumpingstats.statistics.StatsFragment;
+import ty.henry.jumpingstats.statistics.TableDataFragment;
 
 public class MainActivity extends AppCompatActivity implements JumpersFragment.JumpersFragmentListener,
         CompetitionsFragment.CompetitionsFragmentListener, StatsFragment.StatsFragmentListener {
@@ -108,9 +109,13 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
     }
 
     private void removeJumperFromSharedPreferences(Jumper jumper) {
+        removeJumperFromSharedPreferences(jumper, ChartsDataFragment.JUMPERS_PREF_KEY);
+        removeJumperFromSharedPreferences(jumper, TableDataFragment.JUMPERS_PREF_KEY);
+    }
+
+    private void removeJumperFromSharedPreferences(Jumper jumper, String key) {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        Set<String> selectedJumpers = sharedPreferences.getStringSet(ChartsDataFragment.JUMPERS_PREF_KEY,
-                Collections.emptySet());
+        Set<String> selectedJumpers = sharedPreferences.getStringSet(key, Collections.emptySet());
         if(selectedJumpers.contains(jumper.getId()+"")) {
             Set<String> newSelectedJumpers = new HashSet<>();
             for(String s : selectedJumpers) {
@@ -118,15 +123,19 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
                     newSelectedJumpers.add(s);
                 }
             }
-            sharedPreferences.edit().putStringSet(ChartsDataFragment.JUMPERS_PREF_KEY, newSelectedJumpers).apply();
+            sharedPreferences.edit().putStringSet(key, newSelectedJumpers).apply();
         }
     }
 
     private void removeCompetitionFromSharedPreferences(Competition competition) {
+        removeCompetitionFromSharedPreferences(competition, ChartsDataFragment.SEASON_PREF_KEY(competition.getSeason()));
+        removeCompetitionFromSharedPreferences(competition, TableDataFragment.SEASON_PREF_KEY(competition.getSeason()));
+    }
+
+    private void removeCompetitionFromSharedPreferences(Competition competition, String key) {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         Set<String> selectedCompetitions = sharedPreferences
-                .getStringSet(ChartsDataFragment.SEASON_PREF_KEY(competition.getSeason()),
-                        Collections.emptySet());
+                .getStringSet(key, Collections.emptySet());
         if(selectedCompetitions.contains(competition.getId()+"")) {
             Set<String> newSelectedCompetitions = new HashSet<>();
             for(String s : selectedCompetitions) {
@@ -134,9 +143,7 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
                     newSelectedCompetitions.add(s);
                 }
             }
-            sharedPreferences.edit()
-                    .putStringSet(ChartsDataFragment.SEASON_PREF_KEY(competition.getSeason()),
-                            newSelectedCompetitions).apply();
+            sharedPreferences.edit().putStringSet(key, newSelectedCompetitions).apply();
         }
     }
 
