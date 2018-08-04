@@ -11,7 +11,7 @@
     </style>
 
     <style name="floatEditText" parent="@style/editTextStyle">
-        <item name="android:inputType">numberDecimal</item>
+        <item name="android:inputType">numberDecimal|numberSigned</item>
     </style>
 
     <style name="nameEditText" parent="@style/editTextStyle">

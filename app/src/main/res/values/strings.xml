@@ -87,7 +87,16 @@
     <string name="multi_select_pref_summary">%d selected</string>
     <string name="too_many_jumpers_selected">You can select up to %d jumpers</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string-array name="table_values">
+        <item>Distance</item>
+        <item>Wind speed</item>
+        <item>Jumper\'s speed</item>
+        <item>Average mark for style</item>
+        <item>Points difference between 1. and 2. series</item>
+    </string-array>
+
+    <string name="max">Max</string>
+    <string name="min">Min</string>
+    <string name="avg">Avg</string>
 
 </resources>
