@@ -86,6 +86,8 @@
     <string name="competition_options_title">Competitions</string>
     <string name="multi_select_pref_summary">%d selected</string>
     <string name="too_many_jumpers_selected">You can select up to %d jumpers</string>
+    <string name="group_options_title">Group</string>
+    <string name="group_by_point_k_option">Group by point K</string>
 
     <string-array name="table_values">
         <item>Distance</item>

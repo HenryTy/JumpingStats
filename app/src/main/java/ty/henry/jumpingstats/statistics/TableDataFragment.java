@@ -3,6 +3,7 @@ package ty.henry.jumpingstats.statistics;
 import android.content.SharedPreferences;
 import android.support.v7.preference.PreferenceScreen;
 
+import ty.henry.jumpingstats.R;
 import ty.henry.jumpingstats.competitions.Season;
 
 public class TableDataFragment extends BaseDataFragment {
@@ -13,6 +14,8 @@ public class TableDataFragment extends BaseDataFragment {
         return "pref_season_" + season.toString().replace(' ', '_') + "_table";
     }
 
+    public static final String GROUP_BY_K_PREF_KEY = "pref_group_k";
+
     protected String getJumpersPrefKey() {
         return JUMPERS_PREF_KEY;
     }
@@ -22,8 +25,7 @@ public class TableDataFragment extends BaseDataFragment {
     }
 
     protected void initPreferenceScreen(String rootKey) {
-        PreferenceScreen rootPreferenceScreen = getPreferenceManager().createPreferenceScreen(getActivity());
-        setPreferenceScreen(rootPreferenceScreen);
+        setPreferencesFromResource(R.xml.table_preferences, rootKey);
     }
 
     public TableDataFragment() {

@@ -74,7 +74,7 @@ public abstract class BaseDataFragment extends PreferenceFragmentCompat
             competitionsPreference.setDialogTitle(R.string.competition_options_title);
 
             CharSequence[] compNames = seasonToCompetitions.get(season).stream()
-                    .map(comp -> String.format("%s (%s)", comp.getCity(), comp.getText()[1]))
+                    .map(comp -> String.format("%s K-%.0f (%s)", comp.getCity(), comp.getPointK(), comp.getText()[1]))
                     .toArray(CharSequence[]::new);
             CharSequence[] compIds = seasonToCompetitions.get(season).stream()
                     .map(comp -> comp.getId()+"")
