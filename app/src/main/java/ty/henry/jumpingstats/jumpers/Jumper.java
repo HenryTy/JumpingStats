@@ -1,27 +1,30 @@
 package ty.henry.jumpingstats.jumpers;
 
 
-import java.util.Calendar;
+import android.content.Context;
+
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Objects;
 
 import ty.henry.jumpingstats.Country;
 import ty.henry.jumpingstats.competitions.Competition;
-import ty.henry.jumpingstats.MainActivity;
 import ty.henry.jumpingstats.competitions.Result;
 import ty.henry.jumpingstats.TextImageAdapter;
+import ty.henry.jumpingstats.statistics.NoResultForJumperException;
 
 public class Jumper implements TextImageAdapter.TextImage {
     private int id = -1;
     private String name;
     private String surname;
     private Country country;
-    private Calendar dateOfBirth;
+    private LocalDate dateOfBirth;
     private float height;
 
-    private HashMap<Competition, Result[]> compResMap;
+    private HashMap<Competition, Result> compResMap;
 
-    public Jumper(String name, String surname, Country country, Calendar dateOfBirth, float height) {
+    public Jumper(String name, String surname, Country country, LocalDate dateOfBirth, float height) {
         this.name = name;
         this.surname = surname;
         this.country = country;
@@ -34,20 +37,8 @@ public class Jumper implements TextImageAdapter.TextImage {
         this.id = id;
     }
 
-    public void setCompResMap(HashMap<Competition, Result[]> compResMap) {
-        this.compResMap = compResMap;
-        for(Result[] res : compResMap.values()) {
-            if(res[0] != null) res[0].setJumper(this);
-            if(res[1] != null) res[1].setJumper(this);
-        }
-    }
-
     public int getId() {
         return id;
-    }
-
-    public HashMap<Competition, Result[]> getCompResMap() {
-        return compResMap;
     }
 
     public String getName() {
@@ -62,7 +53,7 @@ public class Jumper implements TextImageAdapter.TextImage {
         return country;
     }
 
-    public Calendar getDateOfBirth() {
+    public LocalDate getDateOfBirth() {
         return dateOfBirth;
     }
 
@@ -71,65 +62,19 @@ public class Jumper implements TextImageAdapter.TextImage {
     }
 
     public int getAge() {
-        Calendar today = Calendar.getInstance();
-        int diff = today.get(Calendar.YEAR) - dateOfBirth.get(Calendar.YEAR);
-        if(dateOfBirth.get(Calendar.MONTH) > today.get(Calendar.MONTH) ||
-                (dateOfBirth.get(Calendar.MONTH)==today.get(Calendar.MONTH) &&
-                        dateOfBirth.get(Calendar.DAY_OF_MONTH) > today.get(Calendar.DAY_OF_MONTH))) {
-            diff--;
-        }
-        return diff;
+        return (int) dateOfBirth.until(LocalDate.now(), ChronoUnit.YEARS);
     }
 
-    public Result[] getResults(Competition competition) throws Exception {
-        Result[] results = compResMap.get(competition);
-        if(results==null) {
-            String message = "No results for " + this.surname + " in competition in " + competition.getCity();
-            throw new Exception(message);
+    public Result getResult(Competition competition) throws NoResultForJumperException {
+        Result result = compResMap.get(competition);
+        if(result == null) {
+            throw new NoResultForJumperException();
         }
-        return results;
+        return result;
     }
 
     public void setResult(Competition competition, Result result) {
-        Result[] resultArr = compResMap.get(competition);
-        if(resultArr == null) {
-            resultArr = new Result[2];
-            compResMap.put(competition, resultArr);
-        }
-        resultArr[result.getSeries()-1] = result;
-    }
-
-    public void removeResult(Competition competition, int series) {
-        Result[] resultArr = compResMap.get(competition);
-        resultArr[series-1] = null;
-        if(resultArr[series%2] == null) {
-            compResMap.remove(competition);
-        }
-    }
-
-    public void removeResultsFromCompetition(Competition competition) {
-        compResMap.remove(competition);
-    }
-
-    public void onCompetitionUpdated(Competition oldComp, Competition updatedComp) {
-        Result[] results = compResMap.remove(oldComp);
-        if(results != null) {
-            compResMap.put(updatedComp, results);
-            if(results[0] != null) results[0].setCompetition(updatedComp);
-            if(results[1] != null) results[1].setCompetition(updatedComp);
-        }
-    }
-
-    public float getPointsFromComp(Competition competition) throws Exception {
-        float points = 0;
-        Result[] results = getResults(competition);
-        if(results[0] != null) {
-            points += results[0].points();
-        }
-        if(results[1] != null) {
-            points += results[1].points();
-        }
-        return points;
+        compResMap.put(competition, result);
     }
 
     @Override
@@ -139,16 +84,20 @@ public class Jumper implements TextImageAdapter.TextImage {
         }
         Jumper otherJumper = (Jumper) other;
         return Objects.equals(name, otherJumper.getName()) && Objects.equals(surname, otherJumper.getSurname()) &&
-                Competition.compareDates(dateOfBirth, otherJumper.getDateOfBirth())==0;
+                Objects.equals(dateOfBirth, otherJumper.getDateOfBirth());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, surname, dateOfBirth.get(Calendar.YEAR),
-                dateOfBirth.get(Calendar.MONTH), dateOfBirth.get(Calendar.DAY_OF_MONTH));
+        return Objects.hash(name, surname, dateOfBirth);
     }
 
-    public String[] getText() {
+    @Override
+    public String toString() {
+        return name + " " + surname;
+    }
+
+    public String[] getText(Context context) {
         return new String[]{name + " " + surname};
     }
 

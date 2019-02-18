@@ -1,47 +1,18 @@
 package ty.henry.jumpingstats.competitions;
 
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-
-import ty.henry.jumpingstats.competitions.Competition;
 import ty.henry.jumpingstats.jumpers.Jumper;
+import ty.henry.jumpingstats.statistics.NoResultForJumperException;
 
 public class Result {
 
     private Jumper jumper;
     private Competition competition;
-    private int series;
-    private float distance;
-    private float wind;
-    private float speed;
-    private float[] styleScores;
-    private float gateCompensation;
+    private SeriesResult[] seriesResults;
 
-    private float pForM;
-
-    private static final int[] minPointK = {20, 26, 30, 35, 40, 50, 60, 70, 80, 100, 170};
-    private static final float[] pointsForMeter = {4.8f, 4.4f, 4.0f, 3.6f, 3.2f, 2.8f, 2.4f, 2.2f, 2.0f, 1.8f, 1.2f};
-
-    public Result(Jumper jumper, Competition competition, int series, float distance, float wind,
-                  float speed, float[] styleScores, float gateCompensation) {
-        if(series>2 || series<1) {
-            throw new IllegalArgumentException("Series argument must be 1 or 2");
-        }
+    public Result(Jumper jumper, Competition competition) {
         this.jumper = jumper;
         this.competition = competition;
-        this.series = series;
-        this.distance = distance;
-        this.wind = wind;
-        this.speed = speed;
-        this.styleScores = styleScores;
-        this.gateCompensation = gateCompensation;
-
-        int i=0;
-        while(i < minPointK.length && competition.getPointK() >= minPointK[i]) {
-            i++;
-        }
-        this.pForM = pointsForMeter[i-1];
+        this.seriesResults = new SeriesResult[2];
     }
 
     public void setJumper(Jumper jumper) {
@@ -60,70 +31,40 @@ public class Result {
         return competition;
     }
 
-    public int getSeries() {
-        return series;
-    }
-
-    public float getDistance() {
-        return distance;
-    }
-
-    public float getWind() {
-        return wind;
-    }
-
-    public float getSpeed() {
-        return speed;
-    }
-
-    public float[] getStyleScores() {
-        return styleScores;
-    }
-
-    public float pointsForDistance() {
-        float pointsForAchievePointK = pForM == 1.2f ? 120f : 60f;
-        return pointsForAchievePointK + pForM*(distance - competition.getPointK());
-    }
-
-    public float pointsForStyle() {
-        int minInd = 0, maxInd = 1;
-        if(styleScores[minInd] > styleScores[maxInd]) {
-            minInd = 1;
-            maxInd = 0;
+    public SeriesResult getResultForSeries(int series) throws NoResultForJumperException {
+        checkSeriesArgument(series);
+        SeriesResult seriesResult = seriesResults[series - 1];
+        if(seriesResult == null) {
+            throw new NoResultForJumperException();
         }
-        for(int i=2; i<5; i++) {
-            if(styleScores[i] > styleScores[maxInd]) {
-                maxInd = i;
-            }
-            else if(styleScores[i] < styleScores[minInd]) {
-                minInd = i;
-            }
-        }
-        float sum = 0;
-        for(int i=0; i<5; i++) {
-            if(i!=minInd && i!=maxInd) {
-                sum += styleScores[i];
-            }
-        }
-        return sum;
+        return seriesResult;
     }
 
-    public float pointsForWind() {
-        float result;
-        if(wind < 0) {
-            result = competition.getHeadWindPoints() * wind;
-        }
-        else {
-            result = competition.getTailWindPoints() * wind;
-        }
-        return new BigDecimal(result).setScale(1, RoundingMode.HALF_UP).floatValue();
-    }
+    public void setResultForSeries(int series, SeriesResult seriesResult) {
+        checkSeriesArgument(series);
+        seriesResults[series - 1] = seriesResult;
 
-    public float pointsForGate() {
-        return gateCompensation;
     }
 
     public float points() {
-        return pointsForDistance() + pointsForGate() + pointsForStyle() + pointsForWind();
+        float points = 0;
+        for(int i = 0; i < 2; i++) {
+            if(seriesResults[i] != null) {
+                points += seriesResults[i].points();
+            }
+        }
+        return points;
+    }
+
+    public float absPointsDifference() {
+        float points1 = seriesResults[0] == null ? 0 : seriesResults[0].points();
+        float points2 = seriesResults[1] == null ? 0 : seriesResults[1].points();
+        return Math.abs(points1 - points2);
+    }
+
+    public static void checkSeriesArgument(int series) {
+        if(series>2 || series<1) {
+            throw new IllegalArgumentException("Series argument must be 1 or 2");
+        }
     }
 }

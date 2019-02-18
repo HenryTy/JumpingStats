@@ -31,7 +31,7 @@ import ty.henry.jumpingstats.jumpers.Jumper;
 public class StatsFragment extends Fragment {
 
     interface YValueGetter {
-        float getValue(Jumper jumper, Competition competition, int series) throws Exception;
+        float getValue(Jumper jumper, Competition competition, int series) throws NoResultForJumperException;
     }
 
     interface XValueGetter {

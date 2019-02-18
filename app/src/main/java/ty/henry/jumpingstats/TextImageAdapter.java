@@ -1,6 +1,7 @@
 package ty.henry.jumpingstats;
 
 
+import android.content.Context;
 import android.graphics.Color;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -33,9 +34,8 @@ public class TextImageAdapter<T extends TextImageAdapter.TextImage> extends Recy
     public interface TextImage {
         int TYPE_HEADER = 0;
         int TYPE_ITEM = 1;
-        String[] getText();
+        String[] getText(Context context);
         int getImage();
-        int getId();
         int getType();
     }
 

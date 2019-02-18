@@ -33,26 +33,24 @@
     <string name="charts_data">Data for charts</string>
     <string name="table_data">Data for table</string>
 
-    <string-array name="countries">
-        <item>Austria</item>
-        <item>Bulgaria</item>
-        <item>Canada</item>
-        <item>Czech Republic</item>
-        <item>Estonia</item>
-        <item>Finland</item>
-        <item>France</item>
-        <item>Germany</item>
-        <item>Italy</item>
-        <item>Japan</item>
-        <item>Kazakhstan</item>
-        <item>Norway</item>
-        <item>Poland</item>
-        <item>Russia</item>
-        <item>Slovenia</item>
-        <item>South Korea</item>
-        <item>Switzerland</item>
-        <item>USA</item>
-    </string-array>
+    <string name="aus">Austria</string>
+    <string name="bul">Bulgaria</string>
+    <string name="can">Canada</string>
+    <string name="czech">Czech Republic</string>
+    <string name="est">Estonia</string>
+    <string name="fin">Finland</string>
+    <string name="fr">France</string>
+    <string name="ger">Germany</string>
+    <string name="it">Italy</string>
+    <string name="jap">Japan</string>
+    <string name="kaz">Kazakhstan</string>
+    <string name="nor">Norway</string>
+    <string name="pol">Poland</string>
+    <string name="rus">Russia</string>
+    <string name="slo">Slovenia</string>
+    <string name="kor">South Korea</string>
+    <string name="switz">Switzerland</string>
+    <string name="usa">USA</string>
 
     <string-array name="drawer_options">
         <item>Statistics</item>
@@ -62,25 +60,19 @@
 
     <string name="axes_options_title">Data</string>
     <string name="x_axis_options_title">X axis</string>
-    <string name="x_axis_default">Competition</string>
-    <string-array name="x_axis_options">
-        <item>@string/x_axis_default</item>
-        <item>Jumper\'s age</item>
-        <item>Jumper\'s height</item>
-    </string-array>
+    <string name="x_axis_competition">Competition</string>
+    <string name="x_axis_age">Jumper\'s age</string>
+    <string name="x_axis_height">Jumper\'s height</string>
 
     <string name="y_axis_options_title">Y axis</string>
-    <string name="y_axis_default">Distance</string>
-    <string-array name="y_axis_options">
-        <item>@string/y_axis_default</item>
-        <item>Distance from point K</item>
-        <item>Points for distance</item>
-        <item>Wind speed</item>
-        <item>Points for wind</item>
-        <item>Jumper\'s speed</item>
-        <item>Average mark for style</item>
-        <item>Points</item>
-    </string-array>
+    <string name="y_axis_distance">Distance</string>
+    <string name="y_axis_dist_from_k">Distance from point K</string>
+    <string name="y_axis_points_for_dist">Points for distance</string>
+    <string name="y_axis_wind_speed">Wind speed</string>
+    <string name="y_axis_wind_points">Points for wind</string>
+    <string name="y_axis_speed">Jumper\'s speed</string>
+    <string name="y_axis_style">Average mark for style</string>
+    <string name="y_axis_points">Points</string>
 
     <string name="jumpers_options_title">Jumpers</string>
     <string name="competition_options_title">Competitions</string>
@@ -89,16 +81,16 @@
     <string name="group_options_title">Group</string>
     <string name="group_by_point_k_option">Group by point K</string>
 
-    <string-array name="table_values">
-        <item>Distance</item>
-        <item>Wind speed</item>
-        <item>Jumper\'s speed</item>
-        <item>Average mark for style</item>
-        <item>Points difference between 1. and 2. series</item>
-    </string-array>
+    <string name="table_distance">Distance</string>
+    <string name="table_wind">Wind speed</string>
+    <string name="table_speed">Jumper\'s speed</string>
+    <string name="table_style">Average mark for style</string>
+    <string name="table_points_diff">Points difference between 1. and 2. series</string>
 
     <string name="max">Max</string>
     <string name="min">Min</string>
     <string name="avg">Avg</string>
 
+    <string name="winter">Winter</string>
+    <string name="summer">Summer</string>
 </resources>

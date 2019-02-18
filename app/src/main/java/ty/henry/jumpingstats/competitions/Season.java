@@ -1,41 +1,43 @@
 package ty.henry.jumpingstats.competitions;
 
 
-import java.util.Calendar;
+import android.content.Context;
+
+import java.time.LocalDate;
 import java.util.Objects;
 
 import ty.henry.jumpingstats.TextImageAdapter;
 
+import static ty.henry.jumpingstats.competitions.SeasonType.SUMMER;
+import static ty.henry.jumpingstats.competitions.SeasonType.WINTER;
+
 public class Season implements TextImageAdapter.TextImage, Comparable<Season> {
 
-    private static int WINTER = 0;
-    private static int SUMMER = 1;
-
-    private String name;
-    private int typeOfSeason;
+    private String yearText;
+    private SeasonType typeOfSeason;
     private int year;
 
-    public Season(Calendar date) {
-        int month = date.get(Calendar.MONTH);
-        int year = date.get(Calendar.YEAR);
-        if(month < 4) {
-            name = (year-1) + "/" + year + " Winter";
+    public Season(LocalDate date) {
+        int month = date.getMonthValue();
+        int year = date.getYear();
+        if(month < 5) {
+            yearText = (year-1) + "/" + year;
             this.typeOfSeason = WINTER;
             this.year = year - 1;
         }
-        else if(month < 10) {
-            name = year + " Summer";
+        else if(month < 11) {
+            yearText = year + "";
             this.typeOfSeason = SUMMER;
             this.year = year;
         }
         else {
-            name = year + "/" + (year+1) + " Winter";
+            yearText = year + "/" + (year+1);
             this.typeOfSeason = WINTER;
             this.year = year;
         }
     }
 
-    public int getTypeOfSeason() {
+    public SeasonType getTypeOfSeason() {
         return typeOfSeason;
     }
 
@@ -43,7 +45,8 @@ public class Season implements TextImageAdapter.TextImage, Comparable<Season> {
         return year;
     }
 
-    public String[] getText() {
+    public String[] getText(Context context) {
+        String name = yearText + " " + context.getString(typeOfSeason.getNameId());
         return new String[]{name};
     }
 
@@ -55,13 +58,9 @@ public class Season implements TextImageAdapter.TextImage, Comparable<Season> {
         return TextImageAdapter.TextImage.TYPE_HEADER;
     }
 
-    public int getId() {
-        return -1;
-    }
-
     @Override
     public int hashCode() {
-        return name.hashCode();
+        return Objects.hash(typeOfSeason, year);
     }
 
     @Override
@@ -69,12 +68,9 @@ public class Season implements TextImageAdapter.TextImage, Comparable<Season> {
         if(other==null || getClass() != other.getClass()) {
             return false;
         }
-        return Objects.equals(name, other.toString());
-    }
-
-    @Override
-    public String toString() {
-        return name;
+        Season otherSeason = (Season) other;
+        return Objects.equals(typeOfSeason, otherSeason.getTypeOfSeason())
+                && year == otherSeason.getStartingYear();
     }
 
     public int compareTo(Season other) {
