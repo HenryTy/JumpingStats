@@ -8,10 +8,10 @@ import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.provider.BaseColumns;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Calendar;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -19,12 +19,17 @@ import java.util.TreeSet;
 import ty.henry.jumpingstats.competitions.Competition;
 import ty.henry.jumpingstats.competitions.Result;
 import ty.henry.jumpingstats.competitions.Season;
+import ty.henry.jumpingstats.competitions.SeriesResult;
 import ty.henry.jumpingstats.jumpers.Jumper;
 
 public class DBHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "ski_data";
     private static final int DB_VERSION = 1;
+
+    public interface Identifiable {
+        int getId();
+    }
 
     public DBHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -52,7 +57,7 @@ public class DBHelper extends SQLiteOpenHelper {
         return insert(CompetitionColumns.TABLE_NAME, values);
     }
 
-    public void add(Result result) {
+    public void add(SeriesResult result) {
         ContentValues values = ResultsColumns.values(result);
         insert(ResultsColumns.TABLE_NAME, values);
     }
@@ -73,7 +78,7 @@ public class DBHelper extends SQLiteOpenHelper {
         update(CompetitionColumns.TABLE_NAME, values, competition.getId());
     }
 
-    public void update(Result result) {
+    public void update(SeriesResult result) {
         int jumperId = result.getJumper().getId();
         int competitionId = result.getCompetition().getId();
         int series = result.getSeries();
@@ -101,7 +106,7 @@ public class DBHelper extends SQLiteOpenHelper {
         deleteAll(CompetitionColumns.TABLE_NAME, competitions);
     }
 
-    public void deleteResult(Result result) {
+    public void deleteResult(SeriesResult result) {
         int jumperId = result.getJumper().getId();
         int competitionId = result.getCompetition().getId();
         SQLiteDatabase db = this.getWritableDatabase();
@@ -138,10 +143,10 @@ public class DBHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    private void deleteAll(String table, Set<? extends TextImageAdapter.TextImage> toDelete) {
+    private void deleteAll(String table, Set<? extends Identifiable> toDelete) {
         SQLiteDatabase db = this.getWritableDatabase();
         StringBuilder where = new StringBuilder(BaseColumns._ID + " IN (");
-        for(TextImageAdapter.TextImage item : toDelete) {
+        for(Identifiable item : toDelete) {
             where.append(item.getId()).append(", ");
         }
         where.replace(where.length()-2, where.length(), ")");
@@ -158,13 +163,6 @@ public class DBHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    private String joinedResultsAndCompetitions() {
-        String compId = CompetitionColumns.tableColumn(CompetitionColumns._ID);
-        String resCompId = ResultsColumns.tableColumn(ResultsColumns._COMPETITION);
-        return  ResultsColumns.TABLE_NAME + " JOIN " + CompetitionColumns.TABLE_NAME + " ON " +
-                compId + "=" + resCompId;
-    }
-
     public ArrayList<Jumper> getAllJumpers() {
         ArrayList<Jumper> jumpers = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -172,7 +170,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 null, null, null, null);
         if(cursor.moveToFirst()) {
             do {
-                jumpers.add(createJumper(cursor, db));
+                jumpers.add(createJumper(cursor));
             } while(cursor.moveToNext());
         }
         cursor.close();
@@ -207,36 +205,27 @@ public class DBHelper extends SQLiteOpenHelper {
         return seasonToCompetitions;
     }
 
-    private Jumper createJumper(Cursor cursor, SQLiteDatabase db) {
+    public void fillJumpersWithResults(List<Jumper> jumpers, List<Competition> competitions) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        for(Jumper j : jumpers) {
+            for(Competition c : competitions) {
+                Result result = getResult(j, c, db);
+                j.setResult(c, result);
+            }
+        }
+        db.close();
+    }
+
+    private Jumper createJumper(Cursor cursor) {
         String name = cursor.getString(cursor.getColumnIndex(JumpersColumns._NAME));
         String surname = cursor.getString(cursor.getColumnIndex(JumpersColumns._SURNAME));
         String country = cursor.getString(cursor.getColumnIndex(JumpersColumns._COUNTRY));
         String dateString = cursor.getString(cursor.getColumnIndex(JumpersColumns._DATE_OF_BIRTH));
         float height = cursor.getFloat(cursor.getColumnIndex(JumpersColumns._HEIGHT));
         int id = cursor.getInt(cursor.getColumnIndex(JumpersColumns._ID));
-        try {
-            Jumper jumper = new Jumper(name, surname, Country.valueOf(country), stringToCalendar(dateString), height);
-            jumper.setId(id);
-            setResultsForJumper(jumper, db);
-            return jumper;
-        } catch (ParseException ex) {
-            ex.printStackTrace();
-            return null;
-        }
-    }
-
-    private void setResultsForJumper(Jumper jumper, SQLiteDatabase db) {
-        Cursor cursor = db.query(joinedResultsAndCompetitions(), null,
-                ResultsColumns.tableColumn(ResultsColumns._JUMPER) + "=?",
-                new String[] {jumper.getId()+""}, null, null, null);
-        if(cursor.moveToFirst()) {
-            do {
-                Competition competition = createCompetition(cursor);
-                Result result = createResult(cursor, jumper, competition);
-                jumper.setResult(competition, result);
-            } while(cursor.moveToNext());
-        }
-        cursor.close();
+        Jumper jumper = new Jumper(name, surname, Country.valueOf(country), stringToDate(dateString), height);
+        jumper.setId(id);
+        return jumper;
     }
 
     private Competition createCompetition(Cursor cursor) {
@@ -248,40 +237,49 @@ public class DBHelper extends SQLiteOpenHelper {
         float tailWindPoints = cursor.getFloat(cursor.getColumnIndex(CompetitionColumns._TAIL_WIND_POINTS));
         String dateString = cursor.getString(cursor.getColumnIndex(CompetitionColumns._DATE));
         int id = cursor.getInt(cursor.getColumnIndex(CompetitionColumns._ID));
-        try {
-            Competition competition = new Competition(city, Country.valueOf(country), pointK, hillSize,
-                    headWindPoints, tailWindPoints, stringToCalendar(dateString));
-            competition.setId(id);
-            return competition;
-        } catch (ParseException ex) {
-            ex.printStackTrace();
-            return null;
-        }
+        Competition competition = new Competition(city, Country.valueOf(country), pointK, hillSize,
+                    headWindPoints, tailWindPoints, stringToDate(dateString));
+        competition.setId(id);
+        return competition;
     }
 
-    private Result createResult(Cursor cursor, Jumper jumper, Competition competition) {
+    private SeriesResult createSeriesResult(Cursor cursor, Result result) {
         int series = cursor.getInt(cursor.getColumnIndex(ResultsColumns._SERIES));
         float distance = cursor.getFloat(cursor.getColumnIndex(ResultsColumns._DISTANCE));
         float wind = cursor.getFloat(cursor.getColumnIndex(ResultsColumns._WIND));
         float speed = cursor.getFloat(cursor.getColumnIndex(ResultsColumns._SPEED));
         float gateCompensation = cursor.getFloat(cursor.getColumnIndex(ResultsColumns._GATE_COMPENSATION));
-        float[] marks = new float[5];
+        List<Float> marks = new ArrayList<>();
         for(int i=0; i<5; i++) {
-            marks[i] = cursor.getFloat(cursor.getColumnIndex(ResultsColumns._JUDGES[i]));
+            marks.add(cursor.getFloat(cursor.getColumnIndex(ResultsColumns._JUDGES[i])));
         }
-        return new Result(jumper, competition, series, distance, wind, speed, marks, gateCompensation);
+        return new SeriesResult(series, distance, wind, speed, marks, gateCompensation, result);
     }
 
-    public static String calendarToString(Calendar calendar) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        return dateFormat.format(calendar.getTime());
+    private Result getResult(Jumper jumper, Competition competition, SQLiteDatabase db) {
+        Result result = new Result(jumper, competition);
+        String selection = ResultsColumns._JUMPER + "=? AND " + ResultsColumns._COMPETITION + "=?";
+        Cursor cursor = db.query(ResultsColumns.TABLE_NAME, null, selection,
+                new String[]{jumper.getId()+"", competition.getId()+""}, null, null, null);
+        if(cursor.moveToFirst()) {
+            do {
+                SeriesResult seriesResult = createSeriesResult(cursor, result);
+                result.setResultForSeries(seriesResult.getSeries(), seriesResult);
+            } while(cursor.moveToNext());
+        }
+        else {
+            result = null;
+        }
+        cursor.close();
+        return result;
     }
 
-    public static Calendar stringToCalendar(String date) throws ParseException {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(dateFormat.parse(date));
-        return calendar;
+    private static String dateToString(LocalDate date) {
+        return DateTimeFormatter.ISO_LOCAL_DATE.format(date);
+    }
+
+    private static LocalDate stringToDate(String date) {
+        return LocalDate.parse(date);
     }
 
     public static class JumpersColumns implements BaseColumns {
@@ -294,15 +292,12 @@ public class DBHelper extends SQLiteOpenHelper {
         static String createTable = String.format("CREATE TABLE %s(%s INTEGER PRIMARY KEY AUTOINCREMENT," +
                 " %s TEXT, %s TEXT, %s TEXT, %s TEXT, %s REAL)", TABLE_NAME, _ID, _NAME, _SURNAME, _COUNTRY,
                 _DATE_OF_BIRTH, _HEIGHT);
-        static String tableColumn(String columnName) {
-            return TABLE_NAME + "." + columnName;
-        }
         static ContentValues values(Jumper jumper) {
             ContentValues values = new ContentValues();
             values.put(_NAME, jumper.getName());
             values.put(_SURNAME, jumper.getSurname());
             values.put(_COUNTRY, jumper.getCountry().name());
-            values.put(_DATE_OF_BIRTH, calendarToString(jumper.getDateOfBirth()));
+            values.put(_DATE_OF_BIRTH, dateToString(jumper.getDateOfBirth()));
             values.put(_HEIGHT, jumper.getHeight());
             return values;
         }
@@ -320,9 +315,6 @@ public class DBHelper extends SQLiteOpenHelper {
         static String createTable = String.format("CREATE TABLE %s(%s INTEGER PRIMARY KEY AUTOINCREMENT," +
                         " %s TEXT, %s TEXT, %s REAL, %s REAL, %s REAL, %s REAL, %s TEXT)", TABLE_NAME, _ID, _CITY, _COUNTRY,
                 _POINT_K, _HILL_SIZE, _HEAD_WIND_POINTS, _TAIL_WIND_POINTS, _DATE);
-        static String tableColumn(String columnName) {
-            return TABLE_NAME + "." + columnName;
-        }
         static ContentValues values(Competition competition) {
             ContentValues values = new ContentValues();
             values.put(_CITY, competition.getCity());
@@ -331,10 +323,9 @@ public class DBHelper extends SQLiteOpenHelper {
             values.put(_HILL_SIZE, competition.getHillSize());
             values.put(_HEAD_WIND_POINTS, competition.getHeadWindPoints());
             values.put(_TAIL_WIND_POINTS, competition.getTailWindPoints());
-            values.put(_DATE, calendarToString(competition.getDate()));
+            values.put(_DATE, dateToString(competition.getDate()));
             return values;
         }
-
     }
 
     public static class ResultsColumns {
@@ -356,10 +347,7 @@ public class DBHelper extends SQLiteOpenHelper {
                 "%s INTEGER, %s INTEGER, %s INTEGER, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL, %s REAL)",
                 TABLE_NAME, _JUMPER, _COMPETITION, _SERIES, _DISTANCE, _WIND, _SPEED, _JUDGES[0], _JUDGES[1], _JUDGES[2], _JUDGES[3],
                 _JUDGES[4], _GATE_COMPENSATION);
-        static String tableColumn(String columnName) {
-            return TABLE_NAME + "." + columnName;
-        }
-        static ContentValues values(Result result) {
+        static ContentValues values(SeriesResult result) {
             ContentValues values = new ContentValues();
             values.put(_JUMPER, result.getJumper().getId());
             values.put(_COMPETITION, result.getCompetition().getId());
@@ -367,8 +355,9 @@ public class DBHelper extends SQLiteOpenHelper {
             values.put(_DISTANCE, result.getDistance());
             values.put(_WIND, result.getWind());
             values.put(_SPEED, result.getSpeed());
+            List<Float> styleScores = result.getStyleScores();
             for(int i=0; i<5; i++) {
-                values.put(_JUDGES[i], result.getStyleScores()[i]);
+                values.put(_JUDGES[i], styleScores.get(i));
             }
             values.put(_GATE_COMPENSATION, result.pointsForGate());
             return values;

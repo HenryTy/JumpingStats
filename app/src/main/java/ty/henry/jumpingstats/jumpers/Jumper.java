@@ -9,12 +9,13 @@ import java.util.HashMap;
 import java.util.Objects;
 
 import ty.henry.jumpingstats.Country;
+import ty.henry.jumpingstats.DBHelper;
 import ty.henry.jumpingstats.competitions.Competition;
 import ty.henry.jumpingstats.competitions.Result;
 import ty.henry.jumpingstats.TextImageAdapter;
 import ty.henry.jumpingstats.statistics.NoResultForJumperException;
 
-public class Jumper implements TextImageAdapter.TextImage {
+public class Jumper implements TextImageAdapter.TextImage, DBHelper.Identifiable {
     private int id = -1;
     private String name;
     private String surname;

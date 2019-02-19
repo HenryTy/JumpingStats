@@ -7,9 +7,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
 import ty.henry.jumpingstats.Country;
+import ty.henry.jumpingstats.DBHelper;
 import ty.henry.jumpingstats.TextImageAdapter;
 
-public class Competition implements TextImageAdapter.TextImage, Comparable<Competition> {
+public class Competition implements TextImageAdapter.TextImage, Comparable<Competition>, DBHelper.Identifiable {
     private int id = -1;
     private String city;
     private Country country;
