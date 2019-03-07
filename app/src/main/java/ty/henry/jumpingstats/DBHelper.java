@@ -47,7 +47,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
     }
 
-    public int add(Jumper jumper) throws SQLiteException {
+    public int add(Jumper jumper) {
         ContentValues values = JumpersColumns.values(jumper);
         return insert(JumpersColumns.TABLE_NAME, values);
     }
@@ -62,7 +62,7 @@ public class DBHelper extends SQLiteOpenHelper {
         insert(ResultsColumns.TABLE_NAME, values);
     }
 
-    public void update(Jumper jumper) throws SQLiteException, IllegalArgumentException {
+    public void update(Jumper jumper) {
         if(jumper.getId() < 0) {
             throw new IllegalArgumentException("Jumper must have non-negative id set");
         }
@@ -130,7 +130,7 @@ public class DBHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    private void delete(String table, int id) throws SQLiteException {
+    private void delete(String table, int id) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(table, BaseColumns._ID + "=?", new String[]{Integer.toString(id)});
         String resColumn;
@@ -210,7 +210,9 @@ public class DBHelper extends SQLiteOpenHelper {
         for(Jumper j : jumpers) {
             for(Competition c : competitions) {
                 Result result = getResult(j, c, db);
-                j.setResult(c, result);
+                if(result != null) {
+                    j.setResult(c, result);
+                }
             }
         }
         db.close();
