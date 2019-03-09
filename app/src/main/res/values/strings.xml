@@ -23,6 +23,7 @@
     <string name="edit">Edit</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
+    <string name="jumper_exists_message">Such a jumper already exists</string>
     <string name="delete_jumper_message">This jumper will be deleted</string>
     <string name="delete_competition_message">This competition will be deleted</string>
     <string name="delete_result_message">This result will be deleted</string>

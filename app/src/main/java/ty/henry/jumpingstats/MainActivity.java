@@ -108,6 +108,7 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
         removeJumperFromSharedPreferences(jumper);
     }
 
+    //TODO: Przeniesc do MainViewModel
     private void removeJumperFromSharedPreferences(Jumper jumper) {
         removeJumperFromSharedPreferences(jumper, ChartsDataFragment.JUMPERS_PREF_KEY);
         removeJumperFromSharedPreferences(jumper, TableDataFragment.JUMPERS_PREF_KEY);

@@ -1,7 +1,8 @@
 package ty.henry.jumpingstats.jumpers;
 
 
-import android.os.AsyncTask;
+import android.arch.lifecycle.ViewModelProviders;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -12,12 +13,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.time.format.DateTimeFormatter;
+
 import ty.henry.jumpingstats.ConfirmFragment;
-import ty.henry.jumpingstats.DBHelper;
+import ty.henry.jumpingstats.MainViewModel;
 import ty.henry.jumpingstats.R;
 
 
 public class JumperDetailsFragment extends Fragment {
+
+    public static final String ID_ARG = "id";
 
     private Jumper jumper;
     private JumpersFragment.JumpersFragmentListener listener;
@@ -26,35 +31,45 @@ public class JumperDetailsFragment extends Fragment {
 
     }
 
-    public void setJumper(Jumper jumper) {
-        this.jumper = jumper;
-    }
+    public static JumperDetailsFragment newInstance(int jumperId) {
+        Bundle args = new Bundle();
+        args.putInt(ID_ARG, jumperId);
 
-    public void setListener(JumpersFragment.JumpersFragmentListener listener) {
-        this.listener = listener;
+        JumperDetailsFragment fragment = new JumperDetailsFragment();
+        fragment.setArguments(args);
+
+        return fragment;
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View fragmentView = inflater.inflate(R.layout.fragment_jumper_details, container, false);
-        TextView nameTextView = fragmentView.findViewById(R.id.nameTextView);
-        TextView surnameTextView = fragmentView.findViewById(R.id.surnameTextView);
-        TextView countryTextView = fragmentView.findViewById(R.id.countryTextView);
-        TextView dateTextView = fragmentView.findViewById(R.id.dateTextView);
-        TextView heightTextView = fragmentView.findViewById(R.id.heightTextView);
 
-        String nameText = getString(R.string.name) + ": " + jumper.getName();
-        String surnameText = getString(R.string.surname) + ": " + jumper.getSurname();
-        String countryText = getString(R.string.country) + ": " + jumper.getCountry().getCountryName(getActivity());
-        String dateText = getString(R.string.date_of_birth) + ": " + DBHelper.calendarToString(jumper.getDateOfBirth());
-        String heightText = getString(R.string.height_text) + ": " + jumper.getHeight() + "m";
+        int jumperId = getArguments() != null ? getArguments().getInt(ID_ARG, -1) : -1;
 
-        nameTextView.setText(nameText);
-        surnameTextView.setText(surnameText);
-        countryTextView.setText(countryText);
-        dateTextView.setText(dateText);
-        heightTextView.setText(heightText);
+        MainViewModel mainViewModel = ViewModelProviders.of(getActivity()).get(MainViewModel.class);
+        jumper = mainViewModel.getJumperById(jumperId);
+
+        if(jumper != null) {
+            TextView nameTextView = fragmentView.findViewById(R.id.nameTextView);
+            TextView surnameTextView = fragmentView.findViewById(R.id.surnameTextView);
+            TextView countryTextView = fragmentView.findViewById(R.id.countryTextView);
+            TextView dateTextView = fragmentView.findViewById(R.id.dateTextView);
+            TextView heightTextView = fragmentView.findViewById(R.id.heightTextView);
+
+            String nameText = getString(R.string.name) + ": " + jumper.getName();
+            String surnameText = getString(R.string.surname) + ": " + jumper.getSurname();
+            String countryText = getString(R.string.country) + ": " + getActivity().getString(jumper.getCountry().getNameId());
+            String dateText = getString(R.string.date_of_birth) + ": " + DateTimeFormatter.ISO_LOCAL_DATE.format(jumper.getDateOfBirth());
+            String heightText = getString(R.string.height_text) + ": " + jumper.getHeight() + "m";
+
+            nameTextView.setText(nameText);
+            surnameTextView.setText(surnameText);
+            countryTextView.setText(countryText);
+            dateTextView.setText(dateText);
+            heightTextView.setText(heightText);
+        }
         return fragmentView;
     }
 
@@ -62,6 +77,16 @@ public class JumperDetailsFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        try {
+            listener = (JumpersFragment.JumpersFragmentListener) context;
+        } catch (ClassCastException ex) {
+            throw new ClassCastException(context.toString() + " must implement JumpersFragmentListener");
+        }
     }
 
     @Override
@@ -78,38 +103,19 @@ public class JumperDetailsFragment extends Fragment {
                 confirmFragment.setListener(new ConfirmFragment.DialogListener() {
                     @Override
                     public void onPositiveClick() {
-                        DeleteTask deleteTask = new DeleteTask();
-                        deleteTask.execute(jumper);
+                        MainViewModel mainViewModel = ViewModelProviders.of(getActivity()).get(MainViewModel.class);
+                        mainViewModel.deleteJumper(jumper.getId());
+                        getActivity().onBackPressed();
                     }
                 });
                 confirmFragment.show(getChildFragmentManager(), "dialog");
                 return true;
             case R.id.edit:
-                AddEditJumperFragment fragment = new AddEditJumperFragment();
-                fragment.setListener(listener);
-                fragment.editJumper(jumper, this);
+                AddEditJumperFragment fragment = AddEditJumperFragment.newInstance(jumper.getId());
                 listener.openFragment(fragment, true);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
-        }
-    }
-
-
-    private class DeleteTask extends AsyncTask<Jumper, Void, Jumper> {
-        @Override
-        protected Jumper doInBackground(Jumper... params) {
-            DBHelper dbHelper = new DBHelper(getActivity());
-            dbHelper.deleteJumper(params[0].getId());
-            return params[0];
-        }
-
-        @Override
-        protected void onPostExecute(Jumper jumper) {
-            listener.onJumperDeleted(jumper);
-            if(getActivity()!=null) {
-                getActivity().onBackPressed();
-            }
         }
     }
 }

@@ -1,7 +1,8 @@
 package ty.henry.jumpingstats.jumpers;
 
 
-import android.os.AsyncTask;
+import android.arch.lifecycle.ViewModelProviders;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
@@ -16,10 +17,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
-import ty.henry.jumpingstats.DBHelper;
+import ty.henry.jumpingstats.MainViewModel;
 import ty.henry.jumpingstats.R;
 import ty.henry.jumpingstats.TextImageAdapter;
 
@@ -29,48 +30,28 @@ public class JumpersFragment extends Fragment {
     private JumpersFragmentListener listener;
     private TextImageAdapter<Jumper> textImageAdapter;
     private FloatingActionButton addButton;
+    private RecyclerView recyclerView;
 
     public interface JumpersFragmentListener {
         void openFragment(Fragment fragment, boolean backStack);
-        ArrayList<Jumper> getJumpersList();
-        void onJumperAdded(Jumper jumper);
-        void onJumperDeleted(Jumper jumper);
-        void onJumpersDeleted(Set<Jumper> delJumps);
-        void onJumperUpdated(Jumper jumper);
     }
 
     public JumpersFragment() {
-    }
-
-    public void setListener(JumpersFragmentListener listener) {
-        this.listener = listener;
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View fragmentView = inflater.inflate(R.layout.fragment_jumpers, container, false);
-        RecyclerView recyclerView = fragmentView.findViewById(R.id.jumpersRecycler);
+        recyclerView = fragmentView.findViewById(R.id.jumpersRecycler);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
         recyclerView.setLayoutManager(layoutManager);
-        textImageAdapter = new TextImageAdapter<>(listener.getJumpersList());
-        textImageAdapter.setListener(new TextImageAdapter.Listener() {
-            @Override
-            public void onClick(int position) {
-                JumperDetailsFragment fragment = new JumperDetailsFragment();
-                fragment.setListener(listener);
-                fragment.setJumper(listener.getJumpersList().get(position));
-                listener.openFragment(fragment, true);
-            }
-        });
-        recyclerView.setAdapter(textImageAdapter);
 
         addButton = fragmentView.findViewById(R.id.addButton);
         addButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 AddEditJumperFragment fragment = new AddEditJumperFragment();
-                fragment.setListener(listener);
                 listener.openFragment(fragment, true);
             }
         });
@@ -81,6 +62,18 @@ public class JumpersFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
+        MainViewModel mainViewModel = ViewModelProviders.of(getActivity()).get(MainViewModel.class);
+        mainViewModel.getJumpers().observe(this, this::updateRecyclerView);
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        try {
+            listener = (JumpersFragmentListener) context;
+        } catch (ClassCastException ex) {
+            throw new ClassCastException(context.toString() + " must implement JumpersFragmentListener");
+        }
     }
 
     @Override
@@ -112,9 +105,8 @@ public class JumpersFragment extends Fragment {
                         public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
                             Set<Jumper> toDelete = textImageAdapter.getSelectedItems();
                             if(toDelete.size() > 0) {
-                                DeleteTask deleteTask = new DeleteTask(toDelete);
-                                deleteTask.execute();
-                                listener.onJumpersDeleted(toDelete);
+                                MainViewModel mainViewModel = ViewModelProviders.of(getActivity()).get(MainViewModel.class);
+                                mainViewModel.deleteJumpers(toDelete);
                             }
                             mode.finish();
                             return true;
@@ -134,21 +126,16 @@ public class JumpersFragment extends Fragment {
         }
     }
 
-    private class DeleteTask extends AsyncTask<Void, Void, Boolean> {
-
-        private Set<Jumper> toDelete;
-
-        DeleteTask(Set<Jumper> jumpers) {
-            toDelete = jumpers;
-        }
-
-        @Override
-        protected Boolean doInBackground(Void... params) {
-            DBHelper dbHelper = new DBHelper(getActivity());
-            dbHelper.deleteJumpers(toDelete);
-            return true;
-        }
-
+    private void updateRecyclerView(List<Jumper> jumpers) {
+        textImageAdapter = new TextImageAdapter<>(jumpers, getActivity());
+        textImageAdapter.setListener(new TextImageAdapter.Listener() {
+            @Override
+            public void onClick(int position) {
+                int id = jumpers.get(position).getId();
+                JumperDetailsFragment fragment = JumperDetailsFragment.newInstance(id);
+                listener.openFragment(fragment, true);
+            }
+        });
+        recyclerView.setAdapter(textImageAdapter);
     }
-
 }

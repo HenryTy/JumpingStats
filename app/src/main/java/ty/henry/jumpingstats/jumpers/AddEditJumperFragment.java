@@ -1,8 +1,8 @@
 package ty.henry.jumpingstats.jumpers;
 
 
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
@@ -19,22 +19,21 @@ import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
 import android.widget.Toast;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import ty.henry.jumpingstats.Country;
-import ty.henry.jumpingstats.DBHelper;
-import ty.henry.jumpingstats.MainActivity;
+import ty.henry.jumpingstats.MainViewModel;
 import ty.henry.jumpingstats.PatternInputFilter;
 import ty.henry.jumpingstats.R;
-import ty.henry.jumpingstats.jumpers.Jumper;
-import ty.henry.jumpingstats.jumpers.JumperDetailsFragment;
-import ty.henry.jumpingstats.jumpers.JumpersFragment;
 
 public class AddEditJumperFragment extends Fragment {
+
+    public static final String ID_ARG = "id";
 
     private EditText nameEditText;
     private EditText surnameEditText;
@@ -69,19 +68,18 @@ public class AddEditJumperFragment extends Fragment {
         }
     };
     private Jumper jumperToEdit;
-    private JumperDetailsFragment jumperDetailsFragment;
-    private JumpersFragment.JumpersFragmentListener jumpersFragmentListener;
 
     public AddEditJumperFragment() {
     }
 
-    public void editJumper(Jumper jumper, JumperDetailsFragment jumperDetailsFragment) {
-        this.jumperToEdit = jumper;
-        this.jumperDetailsFragment = jumperDetailsFragment;
-    }
+    public static AddEditJumperFragment newInstance(int jumperToEditId) {
+        Bundle args = new Bundle();
+        args.putInt(ID_ARG, jumperToEditId);
 
-    public void setListener(JumpersFragment.JumpersFragmentListener listener) {
-        this.jumpersFragmentListener = listener;
+        AddEditJumperFragment fragment = new AddEditJumperFragment();
+        fragment.setArguments(args);
+
+        return fragment;
     }
 
     @Override
@@ -101,9 +99,9 @@ public class AddEditJumperFragment extends Fragment {
         heightEditText.addTextChangedListener(textWatcher);
 
         birthDatePicker = fragmentView.findViewById(R.id.datePicker);
-        Calendar today = Calendar.getInstance();
-        birthDatePicker.updateDate(today.get(Calendar.YEAR) - 30, today.get(Calendar.MONTH),
-                today.get(Calendar.DAY_OF_MONTH));
+        LocalDate today = LocalDate.now();
+        birthDatePicker.updateDate(today.getYear() - 30, today.getMonthValue() - 1,
+                today.getDayOfMonth());
 
         countrySpinner = fragmentView.findViewById(R.id.countrySpinner);
         countrySpinner.setAdapter(createCountrySpinnerAdapter(getActivity()));
@@ -115,6 +113,13 @@ public class AddEditJumperFragment extends Fragment {
                 saveJumper();
             }
         });
+
+        int jumperId = getArguments() != null ? getArguments().getInt(ID_ARG, -1) : -1;
+        if(jumperId != -1) {
+            MainViewModel mainViewModel = ViewModelProviders.of(getActivity()).get(MainViewModel.class);
+            jumperToEdit = mainViewModel.getJumperById(jumperId);
+        }
+
         if(jumperToEdit!=null) {
             fillWithDataToEdit();
         }
@@ -127,7 +132,7 @@ public class AddEditJumperFragment extends Fragment {
         ArrayList<HashMap<String, Object>> spinnerData = new ArrayList<>();
         for(Country c : Country.values()) {
             HashMap<String, Object> map = new HashMap<>();
-            map.put(name, c.getCountryName(context));
+            map.put(name, c.getNameId());
             map.put(flag, c.getFlagId());
             spinnerData.add(map);
         }
@@ -139,9 +144,9 @@ public class AddEditJumperFragment extends Fragment {
         nameEditText.setText(jumperToEdit.getName());
         surnameEditText.setText(jumperToEdit.getSurname());
         heightEditText.setText(Float.toString(jumperToEdit.getHeight()));
-        Calendar dateOfBirth = jumperToEdit.getDateOfBirth();
-        birthDatePicker.updateDate(dateOfBirth.get(Calendar.YEAR), dateOfBirth.get(Calendar.MONTH),
-                dateOfBirth.get(Calendar.DAY_OF_MONTH));
+        LocalDate dateOfBirth = jumperToEdit.getDateOfBirth();
+        birthDatePicker.updateDate(dateOfBirth.getYear(), dateOfBirth.getMonthValue() - 1,
+                dateOfBirth.getDayOfMonth());
         int i = jumperToEdit.getCountry().ordinal();
         countrySpinner.setSelection(i);
     }
@@ -150,13 +155,12 @@ public class AddEditJumperFragment extends Fragment {
         String name = nameEditText.getText().toString();
         String surname = surnameEditText.getText().toString();
         float height = Float.parseFloat(heightEditText.getText().toString());
-        Calendar dateOfBirth = Calendar.getInstance();
-        dateOfBirth.set(birthDatePicker.getYear(), birthDatePicker.getMonth(), birthDatePicker.getDayOfMonth());
+        LocalDate dateOfBirth = LocalDate.of(birthDatePicker.getYear(), birthDatePicker.getMonth() + 1,
+                birthDatePicker.getDayOfMonth());
         Country country = Country.values()[countrySpinner.getSelectedItemPosition()];
         Jumper jumper = new Jumper(name, surname, country, dateOfBirth, height);
         if(jumperToEdit!=null) {
             jumper.setId(jumperToEdit.getId());
-            jumper.setCompResMap(jumperToEdit.getCompResMap());
         }
         return jumper;
     }
@@ -164,65 +168,24 @@ public class AddEditJumperFragment extends Fragment {
     private void saveJumper() {
         Jumper jumper = createJumper();
         boolean exists;
-        ArrayList<Jumper> jumpers = jumpersFragmentListener.getJumpersList();
+        MainViewModel mainViewModel = ViewModelProviders.of(getActivity()).get(MainViewModel.class);
+        List<Jumper> jumpers = mainViewModel.getJumpers().getValue();
         int ind = jumpers.indexOf(jumper);
-        SaveTask saveTask;
         if(jumperToEdit==null) {
             exists = ind!=-1;
-            saveTask = new SaveTask(SaveTask.INSERT);
         }
         else {
             exists = ind!=-1 && jumpers.get(ind).getId()!=jumper.getId();
-            saveTask = new SaveTask(SaveTask.UPDATE);
         }
         if(exists) {
-            Toast.makeText(getActivity(), "Such a jumper already exists", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), R.string.jumper_exists_message, Toast.LENGTH_SHORT).show();
         }
         else {
-            saveTask.execute(jumper);
-        }
-    }
-
-    private class SaveTask extends AsyncTask<Jumper, Void, Jumper> {
-        static final int INSERT = 0;
-        static final int UPDATE = 1;
-
-        private int action;
-
-        SaveTask(int action) {
-            if(action!=INSERT && action!=UPDATE) {
-                throw new IllegalArgumentException();
+            if(jumperToEdit == null) {
+                mainViewModel.addJumper(jumper);
             }
-            this.action = action;
-        }
-
-        @Override
-        protected Jumper doInBackground(Jumper... params) {
-            DBHelper dbHelper = new DBHelper(getActivity());
-            switch (action) {
-                case INSERT:
-                    int id = dbHelper.add(params[0]);
-                    params[0].setId(id);
-                    break;
-                case UPDATE:
-                    dbHelper.update(params[0]);
-            }
-            return params[0];
-        }
-
-        @Override
-        protected void onPostExecute(Jumper jumper) {
-            switch (action) {
-                case INSERT:
-                    jumpersFragmentListener.onJumperAdded(jumper);
-                    break;
-                case UPDATE:
-                    jumpersFragmentListener.onJumperUpdated(jumper);
-                    jumperDetailsFragment.setJumper(jumper);
-            }
-            Toast.makeText(getActivity(), R.string.saved, Toast.LENGTH_SHORT).show();
-            if(getActivity()!=null) {
-                getActivity().onBackPressed();
+            else {
+                mainViewModel.updateJumper(jumper);
             }
         }
     }

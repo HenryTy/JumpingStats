@@ -10,13 +10,14 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 public class TextImageAdapter<T extends TextImageAdapter.TextImage> extends RecyclerView.Adapter<TextImageAdapter.ViewHolder> {
 
-    private ArrayList<T> data;
+    private List<T> data;
     private Listener listener;
+    private Context context;
 
     private boolean multiselection = false;
     private HashSet<T> selectedItems = new HashSet<>();
@@ -43,8 +44,9 @@ public class TextImageAdapter<T extends TextImageAdapter.TextImage> extends Recy
         void onClick(int position);
     }
 
-    public TextImageAdapter(ArrayList<T> data) {
+    public TextImageAdapter(List<T> data, Context context) {
         this.data = data;
+        this.context = context;
     }
 
     public void setListener(Listener listener) {
@@ -73,7 +75,7 @@ public class TextImageAdapter<T extends TextImageAdapter.TextImage> extends Recy
     public void onBindViewHolder(final ViewHolder viewHolder, int position) {
         final View itemView = viewHolder.itemView;
         TextView textView1 = itemView.findViewById(R.id.text1);
-        String[] text = data.get(position).getText();
+        String[] text = data.get(position).getText(context);
         textView1.setText(text[0]);
         if(viewHolder.getItemViewType()==TextImage.TYPE_HEADER) {
             return;
