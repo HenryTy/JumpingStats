@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
     private ActionBarDrawerToggle drawerToggle;
 
     private ArrayList<Jumper> jumpers;
-    private ArrayList<TextImage> seasonsAndCompetitions; //TODO: Przeniesc do CompetitionsFragment
+    private ArrayList<TextImage> seasonsAndCompetitions;
     private TreeMap<Season, TreeSet<Competition>> seasonToCompetitions;
 
     @Override

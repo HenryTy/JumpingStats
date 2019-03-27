@@ -69,57 +69,68 @@ public class MainViewModel extends AndroidViewModel {
     }
 
     public void addJumper(Jumper jumper) {
-        UpdateTask<Jumper> updateTask = new UpdateTask<>(DBHelper::add, jumper, R.string.saved);
+        UpdateTask<Jumper> updateTask = new UpdateTask<>(DBHelper::add, jumper, R.string.saved,
+                true, false);
         updateTask.execute();
     }
 
     public void updateJumper(Jumper jumper) {
-        UpdateTask<Jumper> updateTask = new UpdateTask<>(DBHelper::update, jumper, R.string.saved);
+        UpdateTask<Jumper> updateTask = new UpdateTask<>(DBHelper::update, jumper, R.string.saved,
+                true, false);
         updateTask.execute();
     }
 
     public void deleteJumper(int jumpersId) {
-        UpdateTask<Integer> updateTask = new UpdateTask<>(DBHelper::deleteJumper, jumpersId, R.string.deleted);
+        UpdateTask<Integer> updateTask = new UpdateTask<>(DBHelper::deleteJumper, jumpersId, R.string.deleted,
+                true, false);
         updateTask.execute();
     }
 
     public void deleteJumpers(Set<Jumper> jumpers) {
-        UpdateTask<Set<Jumper>> updateTask = new UpdateTask<>(DBHelper::deleteJumpers, jumpers, R.string.deleted);
+        UpdateTask<Set<Jumper>> updateTask = new UpdateTask<>(DBHelper::deleteJumpers, jumpers, R.string.deleted,
+                true, false);
         updateTask.execute();
     }
 
     public void addCompetition(Competition competition) {
-        UpdateTask<Competition> updateTask = new UpdateTask<>(DBHelper::add, competition, R.string.saved);
+        UpdateTask<Competition> updateTask = new UpdateTask<>(DBHelper::add, competition, R.string.saved,
+                true, true);
         updateTask.execute();
     }
 
     public void updateCompetition(Competition competition) {
-        UpdateTask<Competition> updateTask = new UpdateTask<>(DBHelper::update, competition, R.string.saved);
+        UpdateTask<Competition> updateTask = new UpdateTask<>(DBHelper::update, competition, R.string.saved,
+                true, true);
         updateTask.execute();
     }
 
     public void deleteCompetition(int compId) {
-        UpdateTask<Integer> updateTask = new UpdateTask<>(DBHelper::deleteCompetition, compId, R.string.deleted);
+        UpdateTask<Integer> updateTask = new UpdateTask<>(DBHelper::deleteCompetition, compId, R.string.deleted,
+                true, true);
         updateTask.execute();
     }
 
     public void deleteCompetitions(Set<Competition> competitions) {
-        UpdateTask<Set<Competition>> updateTask = new UpdateTask<>(DBHelper::deleteCompetitions, competitions, R.string.deleted);
+        UpdateTask<Set<Competition>> updateTask = new UpdateTask<>(DBHelper::deleteCompetitions, competitions, R.string.deleted,
+                true, true);
         updateTask.execute();
     }
 
     public void addResult(SeriesResult result) {
-        UpdateTask<SeriesResult> updateTask = new UpdateTask<>(DBHelper::add, result, R.string.saved);
+        UpdateTask<SeriesResult> updateTask = new UpdateTask<>(DBHelper::add, result, R.string.saved,
+                false, false);
         updateTask.execute();
     }
 
     public void updateResult(SeriesResult result) {
-        UpdateTask<SeriesResult> updateTask = new UpdateTask<>(DBHelper::update, result, R.string.saved);
+        UpdateTask<SeriesResult> updateTask = new UpdateTask<>(DBHelper::update, result, R.string.saved,
+                false, false);
         updateTask.execute();
     }
 
     public void deleteResult(SeriesResult result) {
-        UpdateTask<SeriesResult> updateTask = new UpdateTask<>(DBHelper::deleteResult, result, R.string.deleted);
+        UpdateTask<SeriesResult> updateTask = new UpdateTask<>(DBHelper::deleteResult, result, R.string.deleted,
+                false, false);
         updateTask.execute();
     }
 
@@ -158,11 +169,16 @@ public class MainViewModel extends AndroidViewModel {
         private BiConsumer<DBHelper, T> backgroundFunction;
         private T dataToUpdate;
         private Integer messageId;
+        private boolean refreshJumpers;
+        private boolean refreshCompetitions;
 
-        public UpdateTask(BiConsumer<DBHelper, T> backgroundFunction, T dataToUpdate, Integer messageId) {
+        public UpdateTask(BiConsumer<DBHelper, T> backgroundFunction, T dataToUpdate, Integer messageId,
+                          boolean refreshJumpers, boolean refreshCompetitions) {
             this.backgroundFunction = backgroundFunction;
             this.dataToUpdate = dataToUpdate;
             this.messageId = messageId;
+            this.refreshJumpers = refreshJumpers;
+            this.refreshCompetitions = refreshCompetitions;
         }
 
         @Override
@@ -177,8 +193,8 @@ public class MainViewModel extends AndroidViewModel {
             if(messageId != null) {
                 Toast.makeText(getApplication(), messageId, Toast.LENGTH_SHORT).show();
             }
-            loadJumpers();
-            loadCompetitions();
+            if(refreshJumpers) loadJumpers();
+            if(refreshCompetitions) loadCompetitions();
         }
     }
 }

@@ -31,6 +31,10 @@ public class Result {
         return competition;
     }
 
+    public boolean isEmpty() {
+        return seriesResults[0] == null && seriesResults[1] == null;
+    }
+
     public SeriesResult getResultForSeries(int series) throws NoResultForJumperException {
         checkSeriesArgument(series);
         SeriesResult seriesResult = seriesResults[series - 1];

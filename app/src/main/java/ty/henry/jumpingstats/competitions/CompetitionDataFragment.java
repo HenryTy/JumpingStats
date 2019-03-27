@@ -8,7 +8,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import ty.henry.jumpingstats.DBHelper;
 import ty.henry.jumpingstats.R;
 
 
@@ -35,7 +34,7 @@ public class CompetitionDataFragment extends Fragment {
         TextView headWindTextView = fragmentView.findViewById(R.id.headWindTextView);
         TextView tailWindTextView = fragmentView.findViewById(R.id.tailWindTextView);
 
-        String countryText = getString(R.string.country) + ": " + parent.competition.getCountry().getCountryName(getActivity());
+        String countryText = getString(R.string.country) + ": " + getString(parent.competition.getCountry().getNameId());
         String hillSizeText = getString(R.string.hillSize) + ": " + parent.competition.getHillSize();
         String headWindText = getString(R.string.headWindPoints) + ": " + parent.competition.getHeadWindPoints();
         String tailWindText = getString(R.string.tailWindPoints) + ": " + parent.competition.getTailWindPoints();

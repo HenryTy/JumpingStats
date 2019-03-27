@@ -21,6 +21,7 @@ import ty.henry.jumpingstats.competitions.Result;
 import ty.henry.jumpingstats.competitions.Season;
 import ty.henry.jumpingstats.competitions.SeriesResult;
 import ty.henry.jumpingstats.jumpers.Jumper;
+import ty.henry.jumpingstats.statistics.NoResultForJumperException;
 
 public class DBHelper extends SQLiteOpenHelper {
 
@@ -209,9 +210,13 @@ public class DBHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         for(Jumper j : jumpers) {
             for(Competition c : competitions) {
-                Result result = getResult(j, c, db);
-                if(result != null) {
-                    j.setResult(c, result);
+                try {
+                    j.getResult(c);
+                } catch (NoResultForJumperException ex) {
+                    Result result = getResult(j, c, db);
+                    if(result != null) {
+                        j.setResult(c, result);
+                    }
                 }
             }
         }

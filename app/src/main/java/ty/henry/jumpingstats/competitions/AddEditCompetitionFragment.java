@@ -1,7 +1,7 @@
 package ty.henry.jumpingstats.competitions;
 
 
-import android.os.AsyncTask;
+import android.arch.lifecycle.ViewModelProviders;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
@@ -14,20 +14,21 @@ import android.view.ViewGroup;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.Spinner;
-import android.widget.Toast;
 
-import java.util.Calendar;
+import java.time.LocalDate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import ty.henry.jumpingstats.Country;
-import ty.henry.jumpingstats.DBHelper;
+import ty.henry.jumpingstats.MainViewModel;
 import ty.henry.jumpingstats.PatternInputFilter;
 import ty.henry.jumpingstats.R;
 import ty.henry.jumpingstats.jumpers.AddEditJumperFragment;
 
 
 public class AddEditCompetitionFragment extends Fragment {
+
+    public static final String ID_ARG = "id";
 
     private Spinner countrySpinner;
     private EditText cityEditText;
@@ -38,8 +39,6 @@ public class AddEditCompetitionFragment extends Fragment {
     private DatePicker datePicker;
     private FloatingActionButton saveButton;
     private Competition compToEdit;
-    private CompetitionDetailsFragment competitionDetailsFragment;
-    private CompetitionsFragment.CompetitionsFragmentListener competitionsFragmentListener;
     private TextWatcher textWatcher = new TextWatcher() {
 
         Pattern windPointsPattern = Pattern.compile("[0-9]+(\\.[0-9]{1,2})?");
@@ -74,19 +73,27 @@ public class AddEditCompetitionFragment extends Fragment {
 
     }
 
-    public void editCompetition(Competition competition, CompetitionDetailsFragment competitionDetailsFragment) {
-        this.compToEdit = competition;
-        this.competitionDetailsFragment = competitionDetailsFragment;
-    }
+    public static AddEditCompetitionFragment newInstance(int compToEditId) {
+        Bundle args = new Bundle();
+        args.putInt(ID_ARG, compToEditId);
 
-    public void setListener(CompetitionsFragment.CompetitionsFragmentListener listener) {
-        this.competitionsFragmentListener = listener;
+        AddEditCompetitionFragment fragment = new AddEditCompetitionFragment();
+        fragment.setArguments(args);
+
+        return fragment;
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View fragmentView = inflater.inflate(R.layout.fragment_add_edit_competition, container, false);
+
+        int compId = getArguments() != null ? getArguments().getInt(ID_ARG, -1) : -1;
+        if(compId != -1) {
+            MainViewModel mainViewModel = ViewModelProviders.of(getActivity()).get(MainViewModel.class);
+            compToEdit = mainViewModel.getCompetitionById(compId);
+        }
+
         countrySpinner = fragmentView.findViewById(R.id.countrySpinner);
         countrySpinner.setAdapter(AddEditJumperFragment.createCountrySpinnerAdapter(getActivity()));
         cityEditText = fragmentView.findViewById(R.id.cityEditText);
@@ -109,14 +116,14 @@ public class AddEditCompetitionFragment extends Fragment {
         saveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                SaveTask saveTask;
+                MainViewModel mainViewModel = ViewModelProviders.of(getActivity()).get(MainViewModel.class);
+                Competition competition = createCompetition();
                 if(compToEdit==null) {
-                    saveTask = new SaveTask(SaveTask.INSERT);
+                    mainViewModel.addCompetition(competition);
                 }
                 else {
-                    saveTask = new SaveTask(SaveTask.UPDATE);
+                    mainViewModel.updateCompetition(competition);
                 }
-                saveTask.execute(createCompetition());
             }
         });
 
@@ -140,9 +147,9 @@ public class AddEditCompetitionFragment extends Fragment {
         hillSizeEditText.setText(Float.toString(compToEdit.getHillSize()));
         headWindEditText.setText(Float.toString(compToEdit.getHeadWindPoints()));
         tailWindEditText.setText(Float.toString(compToEdit.getTailWindPoints()));
-        Calendar date = compToEdit.getDate();
-        datePicker.updateDate(date.get(Calendar.YEAR), date.get(Calendar.MONTH),
-                date.get(Calendar.DAY_OF_MONTH));
+        LocalDate date = compToEdit.getDate();
+        datePicker.updateDate(date.getYear(), date.getMonthValue() - 1,
+                date.getDayOfMonth());
     }
 
     private Competition createCompetition() {
@@ -152,54 +159,12 @@ public class AddEditCompetitionFragment extends Fragment {
         float hillSize = Float.parseFloat(hillSizeEditText.getText().toString());
         float headWindPoints = Float.parseFloat(headWindEditText.getText().toString());
         float tailWindPoints = Float.parseFloat(tailWindEditText.getText().toString());
-        Calendar date = Calendar.getInstance();
-        date.set(datePicker.getYear(), datePicker.getMonth(), datePicker.getDayOfMonth());
+        LocalDate date = LocalDate.of(datePicker.getYear(), datePicker.getMonth() + 1,
+                datePicker.getDayOfMonth());
         Competition competition = new Competition(city, country, pointK, hillSize, headWindPoints, tailWindPoints, date);
         if(compToEdit!=null) {
             competition.setId(compToEdit.getId());
         }
         return competition;
     }
-
-    private class SaveTask extends AsyncTask<Competition, Void, Competition> {
-        static final int INSERT = 0;
-        static final int UPDATE = 1;
-
-        private int action;
-
-        SaveTask(int action) {
-            this.action = action;
-        }
-
-        @Override
-        protected Competition doInBackground(Competition... params) {
-            DBHelper dbHelper = new DBHelper(getActivity());
-            switch (action) {
-                case INSERT:
-                    int id = dbHelper.add(params[0]);
-                    params[0].setId(id);
-                    break;
-                case UPDATE:
-                    dbHelper.update(params[0]);
-            }
-            return params[0];
-        }
-
-        @Override
-        protected void onPostExecute(Competition competition) {
-            switch (action) {
-                case INSERT:
-                    competitionsFragmentListener.onCompetitionAdded(competition);
-                    break;
-                case UPDATE:
-                    competitionsFragmentListener.onCompetitionUpdated(competition);
-                    competitionDetailsFragment.setCompetition(competition);
-            }
-            Toast.makeText(getActivity(), R.string.saved, Toast.LENGTH_SHORT).show();
-            if(getActivity()!=null) {
-                getActivity().onBackPressed();
-            }
-        }
-    }
-
 }

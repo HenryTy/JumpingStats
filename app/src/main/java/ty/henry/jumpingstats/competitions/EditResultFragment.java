@@ -2,7 +2,7 @@ package ty.henry.jumpingstats.competitions;
 
 
 import android.app.Dialog;
-import android.os.AsyncTask;
+import android.arch.lifecycle.ViewModelProviders;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.DialogFragment;
@@ -17,23 +17,28 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.NumberPicker;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import ty.henry.jumpingstats.ConfirmFragment;
-import ty.henry.jumpingstats.DBHelper;
+import ty.henry.jumpingstats.MainViewModel;
 import ty.henry.jumpingstats.PatternInputFilter;
 import ty.henry.jumpingstats.R;
+import ty.henry.jumpingstats.statistics.NoResultForJumperException;
 
 
 public class EditResultFragment extends Fragment {
 
+    public static final String SERIES_ARG = "series";
+
     private int series;
-    private Result result;
-    private float[] judgeMarks;
+    private SeriesResult result;
+    private List<Float> judgeMarks;
     private AddEditResultsFragment parent;
 
     private TextView marksTextView;
@@ -81,11 +86,16 @@ public class EditResultFragment extends Fragment {
 
     }
 
-    public void setSeries(int series) {
-        if(series>2 || series<1) {
-            throw new IllegalArgumentException("Series argument must be 1 or 2");
-        }
-        this.series = series;
+    public static EditResultFragment newInstance(int series) {
+        Result.checkSeriesArgument(series);
+
+        Bundle args = new Bundle();
+        args.putInt(SERIES_ARG, series);
+
+        EditResultFragment fragment = new EditResultFragment();
+        fragment.setArguments(args);
+
+        return fragment;
     }
 
     @Override
@@ -96,10 +106,14 @@ public class EditResultFragment extends Fragment {
             throw new IllegalStateException("Parent fragment for EditResultFragment must be AddEditResultsFragment");
         }
 
+        series = getArguments() != null ? getArguments().getInt(SERIES_ARG, 1) : 1;
+
         parent = (AddEditResultsFragment) getParentFragment();
         try {
-            result = parent.jumper.getResults(parent.competition)[series - 1];
-        } catch(Exception ex) {
+            if(parent.result != null) {
+                result = parent.result.getResultForSeries(series);
+            }
+        } catch (NoResultForJumperException ex) {
 
         }
 
@@ -132,8 +146,7 @@ public class EditResultFragment extends Fragment {
         gateEditText.addTextChangedListener(textWatcher);
 
         if(result == null) {
-            judgeMarks = new float[5];
-            Arrays.fill(judgeMarks, 17.5f);
+            judgeMarks = Collections.nCopies(5, 17.5f);
             deleteButton.setVisibility(View.GONE);
         }
         else {
@@ -159,8 +172,8 @@ public class EditResultFragment extends Fragment {
 
     private String getMarksText() {
         StringBuilder marksBuilder = new StringBuilder();
-        for (int i = 0; i < 5; i++) {
-            marksBuilder.append(judgeMarks[i]);
+        for (int i = 0; i < judgeMarks.size(); i++) {
+            marksBuilder.append(judgeMarks.get(i));
             if (i < 2 || i == 3) {
                 marksBuilder.append("   ");
             } else if (i == 2) {
@@ -177,38 +190,38 @@ public class EditResultFragment extends Fragment {
         gateEditText.setText(Float.toString(result.pointsForGate()));
     }
 
-    private Result createResult() {
+    private SeriesResult createResult() {
         float distance = Float.parseFloat(distanceEditText.getText().toString());
         float wind = Float.parseFloat(windEditText.getText().toString());
         float speed = Float.parseFloat(speedEditText.getText().toString());
         float gateCompensation = Float.parseFloat(gateEditText.getText().toString());
 
-        return new Result(parent.jumper, parent.competition, series, distance, wind, speed, judgeMarks, gateCompensation);
+        return new SeriesResult(series, distance, wind, speed, judgeMarks, gateCompensation, parent.result);
     }
 
     private void saveResult() {
-        Result createdResult = createResult();
-        UpdateTask updateTask;
+        SeriesResult createdResult = createResult();
+        MainViewModel mainViewModel = ViewModelProviders.of(getActivity()).get(MainViewModel.class);
         if(this.result == null) {
-            updateTask = new UpdateTask(UpdateTask.INSERT);
+            mainViewModel.addResult(createdResult);
             deleteButton.setVisibility(View.VISIBLE);
             deleteButton.setOnClickListener(view -> deleteResult());
         }
         else {
-            updateTask = new UpdateTask(UpdateTask.UPDATE);
+            mainViewModel.updateResult(createdResult);
         }
+
         this.result = createdResult;
-        updateTask.execute(createdResult);
-        parent.jumper.setResult(parent.competition, createdResult);
+        parent.updateResult(createdResult);
     }
 
     private void deleteResult() {
         ConfirmFragment confirmFragment = new ConfirmFragment();
         confirmFragment.setMessage(getString(R.string.delete_result_message));
         confirmFragment.setListener(() -> {
-            UpdateTask updateTask = new UpdateTask(UpdateTask.DELETE);
-            updateTask.execute(result);
-            parent.jumper.removeResult(parent.competition, series);
+            MainViewModel mainViewModel = ViewModelProviders.of(getActivity()).get(MainViewModel.class);
+            mainViewModel.deleteResult(result);
+            parent.deleteResult(series);
             clearData();
         });
         confirmFragment.show(getChildFragmentManager(), "dialog");
@@ -220,7 +233,7 @@ public class EditResultFragment extends Fragment {
         windEditText.setText("");
         speedEditText.setText("");
         gateEditText.setText("");
-        Arrays.fill(judgeMarks, 17.5f);
+        judgeMarks = Collections.nCopies(5, 17.5f);
         marksTextView.setText(getMarksText());
         deleteButton.setVisibility(View.GONE);
     }
@@ -228,18 +241,18 @@ public class EditResultFragment extends Fragment {
     public static class SetMarksFragment extends DialogFragment {
 
         public interface DialogListener {
-            void onPositiveClick(float[] marks);
+            void onPositiveClick(List<Float> marks);
         }
 
         private NumberPicker[] judgePickers;
         private DialogListener listener;
-        private float[] initialMarks;
+        private List<Float> initialMarks;
 
         public void setListener(DialogListener listener) {
             this.listener = listener;
         }
 
-        public void setInitialMarks(float[] initialMarks) {
+        public void setInitialMarks(List<Float> initialMarks) {
             this.initialMarks = initialMarks;
         }
 
@@ -250,9 +263,9 @@ public class EditResultFragment extends Fragment {
             builder.setView(pickersView)
                     .setPositiveButton(R.string.ok, (dialogInterface, j) ->  {
                         if(listener != null) {
-                            float[] marks = new float[5];
+                            List<Float> marks = new ArrayList<>();
                             for (int i = 0; i < 5; i++) {
-                                marks[i] = ((float) judgePickers[i].getValue()) / 2;
+                                marks.add(((float) judgePickers[i].getValue()) / 2);
                             }
                             listener.onPositiveClick(marks);
                         }
@@ -272,54 +285,9 @@ public class EditResultFragment extends Fragment {
                 judgePickers[i].setMinValue(0);
                 judgePickers[i].setMaxValue(40);
                 judgePickers[i].setDisplayedValues(marks);
-                judgePickers[i].setValue((int) (initialMarks[i]*2));
+                judgePickers[i].setValue((int) (initialMarks.get(i)*2));
             }
             return builder.create();
         }
     }
-
-    private class UpdateTask extends AsyncTask<Result, Void, Boolean> {
-
-        static final int INSERT = 0;
-        static final int UPDATE = 1;
-        static final int DELETE = 2;
-
-        private int action;
-
-        UpdateTask(int action) {
-            if(action!=INSERT && action!=UPDATE && action!=DELETE) {
-                throw new IllegalArgumentException();
-            }
-            this.action = action;
-        }
-
-        @Override
-        protected Boolean doInBackground(Result... res) {
-            DBHelper dbHelper = new DBHelper(getContext());
-            switch (action) {
-                case INSERT:
-                    dbHelper.add(res[0]);
-                    break;
-                case UPDATE:
-                    dbHelper.update(res[0]);
-                    break;
-                case DELETE:
-                    dbHelper.deleteResult(res[0]);
-            }
-            return true;
-        }
-
-        @Override
-        protected void onPostExecute(Boolean b) {
-            String toastText;
-            if(action == DELETE) {
-                toastText = getString(R.string.deleted);
-            }
-            else {
-                toastText = getString(R.string.saved);
-            }
-            Toast.makeText(getContext(), toastText, Toast.LENGTH_SHORT).show();
-        }
-    }
-
 }

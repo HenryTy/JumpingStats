@@ -1,7 +1,8 @@
 package ty.henry.jumpingstats.competitions;
 
 
-import android.os.AsyncTask;
+import android.arch.lifecycle.ViewModelProviders;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
@@ -15,88 +16,67 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
+import android.widget.SimpleAdapter;
 import android.widget.Spinner;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import ty.henry.jumpingstats.DBHelper;
+import ty.henry.jumpingstats.MainViewModel;
 import ty.henry.jumpingstats.R;
 import ty.henry.jumpingstats.TextImageAdapter;
 import ty.henry.jumpingstats.TextImageAdapter.TextImage;
-import ty.henry.jumpingstats.jumpers.Jumper;
 
 
 public class CompetitionsFragment extends Fragment {
 
     private CompetitionsFragmentListener listener;
     private TextImageAdapter<TextImage> textImageAdapter;
-    private ArrayAdapter<Season> spinnerAdapter;
+    private SimpleAdapter spinnerAdapter;
     private FloatingActionButton addButton;
-
+    private RecyclerView recyclerView;
+    private Spinner seasonsSpinner;
+    private List<TextImage> seasonsAndCompetitions;
+    private List<Season> seasonsList;
 
     public interface CompetitionsFragmentListener {
         void openFragment(Fragment fragment, boolean backStack);
-        ArrayList<Jumper> getJumpersList();
-        ArrayList<TextImageAdapter.TextImage> getCompetitionsList();
-        TreeMap<Season, TreeSet<Competition>> getSeasonToCompetitionsMap();
-        void onCompetitionAdded(Competition competition);
-        void onCompetitionDeleted(Competition competition);
-        void onCompetitionsDeleted(Set<Competition> competitions);
-        void onCompetitionUpdated(Competition competition);
-    }
-
-    public void setListener(CompetitionsFragmentListener listener) {
-        this.listener = listener;
     }
 
     public CompetitionsFragment() {
 
     }
 
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View fragmentView = inflater.inflate(R.layout.fragment_competitions, container, false);
-        RecyclerView recyclerView = fragmentView.findViewById(R.id.competitionsRecycler);
+        recyclerView = fragmentView.findViewById(R.id.competitionsRecycler);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
         recyclerView.setLayoutManager(layoutManager);
-        textImageAdapter = new TextImageAdapter<>(listener.getCompetitionsList());
-        textImageAdapter.setListener(position -> {
-            CompetitionDetailsFragment detailsFragment = new CompetitionDetailsFragment();
-            detailsFragment.setListener(listener);
-            detailsFragment.setCompetition((Competition) listener.getCompetitionsList().get(position));
-            listener.openFragment(detailsFragment, true);
-        });
-        recyclerView.setAdapter(textImageAdapter);
 
         addButton = fragmentView.findViewById(R.id.addButton);
         addButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 AddEditCompetitionFragment fragment = new AddEditCompetitionFragment();
-                fragment.setListener(listener);
                 listener.openFragment(fragment, true);
             }
         });
 
-        Spinner seasonsSpinner = fragmentView.findViewById(R.id.seasonsSpinner);
-        spinnerAdapter = new ArrayAdapter<>(getActivity(), android.R.layout.simple_list_item_1);
-        spinnerAdapter.addAll(listener.getSeasonToCompetitionsMap().keySet());
-        seasonsSpinner.setAdapter(spinnerAdapter);
+        seasonsSpinner = fragmentView.findViewById(R.id.seasonsSpinner);
 
         ImageButton seasonButton = fragmentView.findViewById(R.id.seasonButton);
         seasonButton.setOnClickListener(view -> {
-            Season selectedSeason = (Season) seasonsSpinner.getSelectedItem();
-            ArrayList<TextImage> competitionsAndSeasons = listener.getCompetitionsList();
+            Season selectedSeason = seasonsList.get(seasonsSpinner.getSelectedItemPosition());
             int i = 0;
-            while(!selectedSeason.equals(competitionsAndSeasons.get(i))) i++;
+            while(!selectedSeason.equals(seasonsAndCompetitions.get(i))) i++;
             layoutManager.scrollToPositionWithOffset(i, 0);
         });
         return fragmentView;
@@ -106,6 +86,18 @@ public class CompetitionsFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
+        MainViewModel mainViewModel = ViewModelProviders.of(getActivity()).get(MainViewModel.class);
+        mainViewModel.getSeasonToCompetitions().observe(this, this::updateUI);
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        try {
+            listener = (CompetitionsFragmentListener) context;
+        } catch (ClassCastException ex) {
+            throw new ClassCastException(context.toString() + " must implement CompetitionsFragmentListener");
+        }
     }
 
     @Override
@@ -138,9 +130,8 @@ public class CompetitionsFragment extends Fragment {
                             Set<Competition> toDelete = textImageAdapter.getSelectedItems()
                                     .stream().map(t -> ((Competition) t)).collect(Collectors.toSet());
                             if(toDelete.size() > 0) {
-                                DeleteTask deleteTask = new DeleteTask(toDelete);
-                                deleteTask.execute();
-                                listener.onCompetitionsDeleted(toDelete);
+                                MainViewModel mainViewModel = ViewModelProviders.of(getActivity()).get(MainViewModel.class);
+                                mainViewModel.deleteCompetitions(toDelete);
                             }
                             mode.finish();
                             return true;
@@ -149,10 +140,6 @@ public class CompetitionsFragment extends Fragment {
                         @Override
                         public void onDestroyActionMode(ActionMode mode) {
                             textImageAdapter.setMultiselection(false);
-                            textImageAdapter.notifyDataSetChanged();
-                            spinnerAdapter.clear();
-                            spinnerAdapter.addAll(listener.getSeasonToCompetitionsMap().keySet());
-                            spinnerAdapter.notifyDataSetChanged();
                             addButton.setVisibility(View.VISIBLE);
                         }
                     });
@@ -163,21 +150,42 @@ public class CompetitionsFragment extends Fragment {
         }
     }
 
-    private class DeleteTask extends AsyncTask<Void, Void, Boolean> {
-
-        private Set<Competition> toDelete;
-
-        DeleteTask(Set<Competition> competitions) {
-            toDelete = competitions;
-        }
-
-        @Override
-        protected Boolean doInBackground(Void... params) {
-            DBHelper dbHelper = new DBHelper(getActivity());
-            dbHelper.deleteCompetitions(toDelete);
-            return true;
-        }
-
+    private void updateUI(TreeMap<Season, TreeSet<Competition>> seasonToCompetitions) {
+        createTextImageAdapter(seasonToCompetitions);
+        recyclerView.setAdapter(textImageAdapter);
+        createSeasonsSpinnerAdapter(seasonToCompetitions);
+        seasonsSpinner.setAdapter(spinnerAdapter);
     }
 
+    private List<TextImage> competitionsMapToList(TreeMap<Season, TreeSet<Competition>> seasonToCompetitions) {
+        ArrayList<TextImage> seasonsAndCompetitions = new ArrayList<>();
+        for(Season season : seasonToCompetitions.keySet()) {
+            seasonsAndCompetitions.add(season);
+            seasonsAndCompetitions.addAll(seasonToCompetitions.get(season));
+        }
+        return seasonsAndCompetitions;
+    }
+
+    private void createTextImageAdapter(TreeMap<Season, TreeSet<Competition>> seasonToCompetitions) {
+        seasonsAndCompetitions = competitionsMapToList(seasonToCompetitions);
+        textImageAdapter = new TextImageAdapter<>(seasonsAndCompetitions, getActivity());
+        textImageAdapter.setListener(position -> {
+            Competition selectedComp = (Competition) seasonsAndCompetitions.get(position);
+            CompetitionDetailsFragment detailsFragment = CompetitionDetailsFragment.newInstance(selectedComp.getId());
+            listener.openFragment(detailsFragment, true);
+        });
+    }
+
+    private void createSeasonsSpinnerAdapter(TreeMap<Season, TreeSet<Competition>> seasonToCompetitions) {
+        String name = "name";
+        ArrayList<HashMap<String, Object>> spinnerData = new ArrayList<>();
+        seasonsList = new ArrayList<>(seasonToCompetitions.keySet());
+        for(Season s : seasonsList) {
+            HashMap<String, Object> map = new HashMap<>();
+            map.put(name, s.getText(getActivity())[0]);
+            spinnerData.add(map);
+        }
+        spinnerAdapter = new SimpleAdapter(getActivity(), spinnerData, android.R.layout.simple_list_item_1,
+                new String[]{name}, new int[]{android.R.id.text1});
+    }
 }

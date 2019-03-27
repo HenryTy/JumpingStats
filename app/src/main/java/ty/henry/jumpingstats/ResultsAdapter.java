@@ -1,5 +1,6 @@
 package ty.henry.jumpingstats;
 
+import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,12 +11,14 @@ import java.util.List;
 
 import ty.henry.jumpingstats.competitions.Competition;
 import ty.henry.jumpingstats.jumpers.Jumper;
+import ty.henry.jumpingstats.statistics.NoResultForJumperException;
 
 public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.ViewHolder> {
 
     private Listener listener;
     private Competition competition;
     private List<Jumper> jumperList;
+    private Context context;
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
 
@@ -31,9 +34,10 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.ViewHold
         void onClick(int position);
     }
 
-    public ResultsAdapter(Competition competition, List<Jumper> jumpers) {
+    public ResultsAdapter(Competition competition, List<Jumper> jumpers, Context context) {
         this.competition = competition;
         this.jumperList = jumpers;
+        this.context = context;
     }
 
     public void setListener(Listener listener) {
@@ -54,11 +58,11 @@ public class ResultsAdapter extends RecyclerView.Adapter<ResultsAdapter.ViewHold
         TextView textView3 = itemView.findViewById(R.id.text3);
 
         textView1.setText(Integer.toString(position+1));
-        textView2.setText(jumperList.get(position).getText()[0]);
+        textView2.setText(jumperList.get(position).getText(context)[0]);
         try {
-            float points = jumperList.get(position).getPointsFromComp(competition);
+            float points = jumperList.get(position).getResult(competition).points();
             textView3.setText(String.format("%.1f", points));
-        } catch (Exception ex) {
+        } catch (NoResultForJumperException ex) {
             textView3.setText("-");
         }
 

@@ -115,7 +115,6 @@ public class JumpersFragment extends Fragment {
                         @Override
                         public void onDestroyActionMode(ActionMode mode) {
                             textImageAdapter.setMultiselection(false);
-                            textImageAdapter.notifyDataSetChanged();
                             addButton.setVisibility(View.VISIBLE);
                         }
                     });

@@ -98,21 +98,25 @@ public class JumperDetailsFragment extends Fragment {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.delete:
-                ConfirmFragment confirmFragment = new ConfirmFragment();
-                confirmFragment.setMessage(getString(R.string.delete_jumper_message));
-                confirmFragment.setListener(new ConfirmFragment.DialogListener() {
-                    @Override
-                    public void onPositiveClick() {
-                        MainViewModel mainViewModel = ViewModelProviders.of(getActivity()).get(MainViewModel.class);
-                        mainViewModel.deleteJumper(jumper.getId());
-                        getActivity().onBackPressed();
-                    }
-                });
-                confirmFragment.show(getChildFragmentManager(), "dialog");
+                if(jumper != null) {
+                    ConfirmFragment confirmFragment = new ConfirmFragment();
+                    confirmFragment.setMessage(getString(R.string.delete_jumper_message));
+                    confirmFragment.setListener(new ConfirmFragment.DialogListener() {
+                        @Override
+                        public void onPositiveClick() {
+                            MainViewModel mainViewModel = ViewModelProviders.of(getActivity()).get(MainViewModel.class);
+                            mainViewModel.deleteJumper(jumper.getId());
+                            getActivity().onBackPressed();
+                        }
+                    });
+                    confirmFragment.show(getChildFragmentManager(), "dialog");
+                }
                 return true;
             case R.id.edit:
-                AddEditJumperFragment fragment = AddEditJumperFragment.newInstance(jumper.getId());
-                listener.openFragment(fragment, true);
+                if(jumper != null) {
+                    AddEditJumperFragment fragment = AddEditJumperFragment.newInstance(jumper.getId());
+                    listener.openFragment(fragment, true);
+                }
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
