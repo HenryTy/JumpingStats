@@ -59,6 +59,11 @@ public class Season implements TextImageAdapter.TextImage, Comparable<Season> {
     }
 
     @Override
+    public String toString() {
+        return yearText + " " + typeOfSeason.name();
+    }
+
+    @Override
     public int hashCode() {
         return Objects.hash(typeOfSeason, year);
     }

@@ -108,46 +108,6 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
         removeJumperFromSharedPreferences(jumper);
     }
 
-    //TODO: Przeniesc do MainViewModel
-    private void removeJumperFromSharedPreferences(Jumper jumper) {
-        removeJumperFromSharedPreferences(jumper, ChartsDataFragment.JUMPERS_PREF_KEY);
-        removeJumperFromSharedPreferences(jumper, TableDataFragment.JUMPERS_PREF_KEY);
-    }
-
-    private void removeJumperFromSharedPreferences(Jumper jumper, String key) {
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        Set<String> selectedJumpers = sharedPreferences.getStringSet(key, Collections.emptySet());
-        if(selectedJumpers.contains(jumper.getId()+"")) {
-            Set<String> newSelectedJumpers = new HashSet<>();
-            for(String s : selectedJumpers) {
-                if(!s.equals(jumper.getId()+"")) {
-                    newSelectedJumpers.add(s);
-                }
-            }
-            sharedPreferences.edit().putStringSet(key, newSelectedJumpers).apply();
-        }
-    }
-
-    private void removeCompetitionFromSharedPreferences(Competition competition) {
-        removeCompetitionFromSharedPreferences(competition, ChartsDataFragment.SEASON_PREF_KEY(competition.getSeason()));
-        removeCompetitionFromSharedPreferences(competition, TableDataFragment.SEASON_PREF_KEY(competition.getSeason()));
-    }
-
-    private void removeCompetitionFromSharedPreferences(Competition competition, String key) {
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        Set<String> selectedCompetitions = sharedPreferences
-                .getStringSet(key, Collections.emptySet());
-        if(selectedCompetitions.contains(competition.getId()+"")) {
-            Set<String> newSelectedCompetitions = new HashSet<>();
-            for(String s : selectedCompetitions) {
-                if(!s.equals(competition.getId()+"")) {
-                    newSelectedCompetitions.add(s);
-                }
-            }
-            sharedPreferences.edit().putStringSet(key, newSelectedCompetitions).apply();
-        }
-    }
-
     public void onJumpersDeleted(Set<Jumper> delJumps) {
         jumpers.removeAll(delJumps);
         for(Jumper j : delJumps) {

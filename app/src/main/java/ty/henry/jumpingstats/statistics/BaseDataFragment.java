@@ -1,5 +1,6 @@
 package ty.henry.jumpingstats.statistics;
 
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -12,10 +13,12 @@ import android.support.v7.preference.PreferenceGroup;
 import android.util.TypedValue;
 import android.view.ContextThemeWrapper;
 
-import java.util.ArrayList;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import ty.henry.jumpingstats.MainViewModel;
 import ty.henry.jumpingstats.R;
 import ty.henry.jumpingstats.competitions.Competition;
 import ty.henry.jumpingstats.competitions.Season;
@@ -30,24 +33,43 @@ public abstract class BaseDataFragment extends PreferenceFragmentCompat
 
     protected abstract void initPreferenceScreen(String rootKey);
 
-    private ArrayList<Jumper> jumpers;
+    private List<Jumper> jumpers;
     private TreeMap<Season, TreeSet<Competition>> seasonToCompetitions;
 
-    public void setJumpersAndCompetitions(ArrayList<Jumper> jumpers,
-                                          TreeMap<Season, TreeSet<Competition>> seasonToCompetitions) {
-        this.jumpers = jumpers;
-        this.seasonToCompetitions = seasonToCompetitions;
-    }
+    private ContextThemeWrapper contextThemeWrapper;
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         initPreferenceScreen(rootKey);
 
+        getJumpersAndCompetitions();
+
         Context activityContext = getActivity();
         TypedValue themeTypedValue = new TypedValue();
         activityContext.getTheme().resolveAttribute(R.attr.preferenceTheme, themeTypedValue, true);
-        ContextThemeWrapper contextThemeWrapper = new ContextThemeWrapper(activityContext, themeTypedValue.resourceId);
+        contextThemeWrapper = new ContextThemeWrapper(activityContext, themeTypedValue.resourceId);
 
+        addPreferences();
+
+        initSummary(getPreferenceScreen());
+    }
+
+    private void getJumpersAndCompetitions() {
+        MainViewModel mainViewModel = ViewModelProviders.of(getActivity()).get(MainViewModel.class);
+        jumpers = mainViewModel.getJumpers().getValue();
+        seasonToCompetitions = mainViewModel.getSeasonToCompetitions().getValue();
+    }
+
+    protected ContextThemeWrapper getContextThemeWrapper() {
+        return contextThemeWrapper;
+    }
+
+    protected void addPreferences() {
+        addJumpersPreferences();
+        addCompetitionsPreferences();
+    }
+
+    private void addJumpersPreferences() {
         PreferenceCategory jumpersCategory = new PreferenceCategory(contextThemeWrapper);
         jumpersCategory.setTitle(R.string.jumpers_options_title);
         MultiSelectListPreference jumpersPreference = new MultiSelectListPreference(contextThemeWrapper);
@@ -55,14 +77,16 @@ public abstract class BaseDataFragment extends PreferenceFragmentCompat
         jumpersPreference.setTitle(R.string.jumpers_options_title);
         jumpersPreference.setDialogTitle(R.string.jumpers_options_title);
 
-        CharSequence[] jumpersName = jumpers.stream().map(j -> j.getText()[0]).toArray(CharSequence[]::new);
+        CharSequence[] jumpersName = jumpers.stream().map(Jumper::toString).toArray(CharSequence[]::new);
         CharSequence[] jumpersId = jumpers.stream().map(j -> j.getId()+"").toArray(CharSequence[]::new);
         jumpersPreference.setEntries(jumpersName);
         jumpersPreference.setEntryValues(jumpersId);
 
         getPreferenceScreen().addPreference(jumpersCategory);
         jumpersCategory.addPreference(jumpersPreference);
+    }
 
+    private void addCompetitionsPreferences() {
         PreferenceCategory competitionsCategory = new PreferenceCategory(contextThemeWrapper);
         competitionsCategory.setTitle(R.string.competition_options_title);
         getPreferenceScreen().addPreference(competitionsCategory);
@@ -74,7 +98,8 @@ public abstract class BaseDataFragment extends PreferenceFragmentCompat
             competitionsPreference.setDialogTitle(R.string.competition_options_title);
 
             CharSequence[] compNames = seasonToCompetitions.get(season).stream()
-                    .map(comp -> String.format("%s K-%.0f (%s)", comp.getCity(), comp.getPointK(), comp.getText()[1]))
+                    .map(comp -> String.format("%s K-%.0f (%s)", comp.getCity(), comp.getPointK(),
+                            DateTimeFormatter.ISO_LOCAL_DATE.format(comp.getDate())))
                     .toArray(CharSequence[]::new);
             CharSequence[] compIds = seasonToCompetitions.get(season).stream()
                     .map(comp -> comp.getId()+"")
@@ -83,8 +108,6 @@ public abstract class BaseDataFragment extends PreferenceFragmentCompat
             competitionsPreference.setEntryValues(compIds);
 
             competitionsCategory.addPreference(competitionsPreference);
-
-            initSummary(getPreferenceScreen());
         }
     }
 

@@ -1,6 +1,8 @@
 package ty.henry.jumpingstats.statistics;
 
 
+import android.arch.lifecycle.ViewModelProviders;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -16,13 +18,13 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.stream.IntStream;
 
+import ty.henry.jumpingstats.MainViewModel;
 import ty.henry.jumpingstats.R;
 import ty.henry.jumpingstats.competitions.Competition;
 import ty.henry.jumpingstats.competitions.Season;
@@ -34,34 +36,22 @@ public class StatsFragment extends Fragment {
         float getValue(Jumper jumper, Competition competition, int series) throws NoResultForJumperException;
     }
 
-    interface XValueGetter {
-        float getValue(Jumper jumper);
-    }
-
     public static final int MAX_JUMPERS = 5;
 
     private StatsFragmentListener statsFragmentListener;
-    ArrayList<Jumper> allJumpers;
-    ArrayList<Jumper> selectedJumpersList;
+    List<Jumper> allJumpers;
+    List<Jumper> selectedJumpersList;
     TreeMap<Season, TreeSet<Competition>> seasonToCompetitions;
-    ArrayList<Competition> selectedCompetitionsList;
-    YValueGetter yValueGetter;
-    XValueGetter xValueGetter;
-    String yAxisTitle;
-    String xAxisTitle;
+    List<Competition> selectedCompetitionsList;
+    YOption yOption;
+    XOption xOption;
 
     public interface StatsFragmentListener {
         void openFragment(Fragment fragment, boolean backStack);
-        ArrayList<Jumper> getJumpersList();
-        TreeMap<Season, TreeSet<Competition>> getSeasonToCompetitionsMap();
     }
 
     public StatsFragment() {
 
-    }
-
-    public void setListener(StatsFragmentListener listener) {
-        this.statsFragmentListener = listener;
     }
 
     @Override
@@ -69,14 +59,24 @@ public class StatsFragment extends Fragment {
                              Bundle savedInstanceState) {
         View fragmentView = inflater.inflate(R.layout.fragment_stats, container, false);
         ViewPager viewPager = fragmentView.findViewById(R.id.statsViewPager);
-        viewPager.setAdapter(new MyPageAdapter(getChildFragmentManager()));
+        viewPager.setAdapter(new MyPagerAdapter(getChildFragmentManager()));
 
-        allJumpers = statsFragmentListener.getJumpersList();
-        seasonToCompetitions = statsFragmentListener.getSeasonToCompetitionsMap();
+        MainViewModel mainViewModel = ViewModelProviders.of(getActivity()).get(MainViewModel.class);
+        allJumpers = mainViewModel.getJumpers().getValue();
+        seasonToCompetitions = mainViewModel.getSeasonToCompetitions().getValue();
         getDataFromSharedPreferences();
         return fragmentView;
     }
 
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        try {
+            statsFragmentListener = (StatsFragmentListener) context;
+        } catch (ClassCastException ex) {
+            throw new ClassCastException(context.toString() + " must implement StatsFragmentListener");
+        }
+    }
 
     private void getDataFromSharedPreferences() {
         selectedJumpersList = new ArrayList<>();
@@ -102,57 +102,11 @@ public class StatsFragment extends Fragment {
         }
         Collections.reverse(selectedCompetitionsList);
 
-        String xOption = preferences.getString(ChartsDataFragment.X_AXIS_PREF_KEY, getString(R.string.x_axis_default));
-        String[] xAxisOptions = getResources().getStringArray(R.array.x_axis_options);
-        if(xOption.equals(xAxisOptions[1])) {
-            xValueGetter = Jumper::getAge;
-        }
-        else if(xOption.equals(xAxisOptions[2])) {
-            xValueGetter = Jumper::getHeight;
-        }
-        else {
-            xValueGetter = null;
-        }
+        int xOptionNr = preferences.getInt(ChartsDataFragment.X_AXIS_PREF_KEY, 0);
+        xOption = XOption.values()[xOptionNr];
 
-        String yOption = preferences.getString(ChartsDataFragment.Y_AXIS_PREF_KEY, getString(R.string.y_axis_default));
-        String[] yAxisOptions = getResources().getStringArray(R.array.y_axis_options);
-        if(yOption.equals(yAxisOptions[0])) {
-            yValueGetter = ((jumper, competition, series) -> jumper.getResults(competition)[series-1].getDistance());
-        }
-        else if(yOption.equals(yAxisOptions[1])) {
-            yValueGetter = ((jumper, competition, series) ->
-                    jumper.getResults(competition)[series-1].getDistance() - competition.getPointK());
-        }
-        else if(yOption.equals(yAxisOptions[2])) {
-            yValueGetter = ((jumper, competition, series) ->
-                    jumper.getResults(competition)[series-1].pointsForDistance());
-        }
-        else if(yOption.equals(yAxisOptions[3])) {
-            yValueGetter = ((jumper, competition, series) ->
-                    jumper.getResults(competition)[series-1].getWind());
-        }
-        else if(yOption.equals(yAxisOptions[4])) {
-            yValueGetter = ((jumper, competition, series) ->
-                    jumper.getResults(competition)[series-1].pointsForWind());
-        }
-        else if(yOption.equals(yAxisOptions[5])) {
-            yValueGetter = ((jumper, competition, series) ->
-                    jumper.getResults(competition)[series-1].getSpeed());
-        }
-        else if(yOption.equals(yAxisOptions[6])) {
-            yValueGetter = ((jumper, competition, series) -> {
-                float[] marks = jumper.getResults(competition)[series-1].getStyleScores();
-                return (float) IntStream.range(0, marks.length)
-                        .mapToDouble(i -> marks[i]).average().getAsDouble();
-            });
-        }
-        else if(yOption.equals(yAxisOptions[7])) {
-            yValueGetter = ((jumper, competition, series) ->
-                    jumper.getResults(competition)[series-1].points());
-        }
-
-        xAxisTitle = xOption;
-        yAxisTitle = yOption;
+        int yOptionNr = preferences.getInt(ChartsDataFragment.Y_AXIS_PREF_KEY, 0);
+        yOption = YOption.values()[yOptionNr];
     }
 
     @Override
@@ -171,12 +125,10 @@ public class StatsFragment extends Fragment {
         switch (item.getItemId()) {
             case R.id.chartsData:
                 ChartsDataFragment chartsDataFragment = new ChartsDataFragment();
-                chartsDataFragment.setJumpersAndCompetitions(allJumpers, seasonToCompetitions);
                 statsFragmentListener.openFragment(chartsDataFragment, true);
                 return true;
             case R.id.tableData:
                 TableDataFragment tableDataFragment = new TableDataFragment();
-                tableDataFragment.setJumpersAndCompetitions(allJumpers, seasonToCompetitions);
                 statsFragmentListener.openFragment(tableDataFragment, true);
                 return true;
             default:
@@ -184,9 +136,9 @@ public class StatsFragment extends Fragment {
         }
     }
 
-    private static class MyPageAdapter extends FragmentPagerAdapter {
+    private static class MyPagerAdapter extends FragmentPagerAdapter {
 
-        MyPageAdapter(FragmentManager fragmentManager) {
+        MyPagerAdapter(FragmentManager fragmentManager) {
             super(fragmentManager);
         }
 

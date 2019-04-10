@@ -5,9 +5,13 @@ import android.app.Application;
 import android.arch.lifecycle.AndroidViewModel;
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MutableLiveData;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.support.v7.preference.PreferenceManager;
 import android.widget.Toast;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
@@ -18,6 +22,8 @@ import ty.henry.jumpingstats.competitions.Competition;
 import ty.henry.jumpingstats.competitions.Season;
 import ty.henry.jumpingstats.competitions.SeriesResult;
 import ty.henry.jumpingstats.jumpers.Jumper;
+import ty.henry.jumpingstats.statistics.ChartsDataFragment;
+import ty.henry.jumpingstats.statistics.TableDataFragment;
 
 public class MainViewModel extends AndroidViewModel {
 
@@ -81,12 +87,16 @@ public class MainViewModel extends AndroidViewModel {
     }
 
     public void deleteJumper(int jumpersId) {
+        removeJumperFromSharedPreferences(getJumperById(jumpersId));
         UpdateTask<Integer> updateTask = new UpdateTask<>(DBHelper::deleteJumper, jumpersId, R.string.deleted,
                 true, false);
         updateTask.execute();
     }
 
     public void deleteJumpers(Set<Jumper> jumpers) {
+        for(Jumper j : jumpers) {
+            removeJumperFromSharedPreferences(j);
+        }
         UpdateTask<Set<Jumper>> updateTask = new UpdateTask<>(DBHelper::deleteJumpers, jumpers, R.string.deleted,
                 true, false);
         updateTask.execute();
@@ -105,15 +115,58 @@ public class MainViewModel extends AndroidViewModel {
     }
 
     public void deleteCompetition(int compId) {
+        removeCompetitionFromSharedPreferences(getCompetitionById(compId));
         UpdateTask<Integer> updateTask = new UpdateTask<>(DBHelper::deleteCompetition, compId, R.string.deleted,
                 true, true);
         updateTask.execute();
     }
 
     public void deleteCompetitions(Set<Competition> competitions) {
+        for(Competition c : competitions) {
+            removeCompetitionFromSharedPreferences(c);
+        }
         UpdateTask<Set<Competition>> updateTask = new UpdateTask<>(DBHelper::deleteCompetitions, competitions, R.string.deleted,
                 true, true);
         updateTask.execute();
+    }
+
+    private void removeJumperFromSharedPreferences(Jumper jumper) {
+        removeJumperFromSharedPreferences(jumper, ChartsDataFragment.JUMPERS_PREF_KEY);
+        removeJumperFromSharedPreferences(jumper, TableDataFragment.JUMPERS_PREF_KEY);
+    }
+
+    private void removeJumperFromSharedPreferences(Jumper jumper, String key) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplication());
+        Set<String> selectedJumpers = sharedPreferences.getStringSet(key, Collections.emptySet());
+        if(selectedJumpers.contains(jumper.getId()+"")) {
+            Set<String> newSelectedJumpers = new HashSet<>();
+            for(String s : selectedJumpers) {
+                if(!s.equals(jumper.getId()+"")) {
+                    newSelectedJumpers.add(s);
+                }
+            }
+            sharedPreferences.edit().putStringSet(key, newSelectedJumpers).apply();
+        }
+    }
+
+    private void removeCompetitionFromSharedPreferences(Competition competition) {
+        removeCompetitionFromSharedPreferences(competition, ChartsDataFragment.SEASON_PREF_KEY(competition.getSeason()));
+        removeCompetitionFromSharedPreferences(competition, TableDataFragment.SEASON_PREF_KEY(competition.getSeason()));
+    }
+
+    private void removeCompetitionFromSharedPreferences(Competition competition, String key) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplication());
+        Set<String> selectedCompetitions = sharedPreferences
+                .getStringSet(key, Collections.emptySet());
+        if(selectedCompetitions.contains(competition.getId()+"")) {
+            Set<String> newSelectedCompetitions = new HashSet<>();
+            for(String s : selectedCompetitions) {
+                if(!s.equals(competition.getId()+"")) {
+                    newSelectedCompetitions.add(s);
+                }
+            }
+            sharedPreferences.edit().putStringSet(key, newSelectedCompetitions).apply();
+        }
     }
 
     public void addResult(SeriesResult result) {

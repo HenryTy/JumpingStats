@@ -1,6 +1,6 @@
 package ty.henry.jumpingstats.statistics;
 
-import java.util.stream.IntStream;
+import java.util.List;
 
 import ty.henry.jumpingstats.R;
 import ty.henry.jumpingstats.competitions.Competition;
@@ -47,9 +47,8 @@ public enum YOption implements StatsFragment.YValueGetter {
     MARK_FOR_STYLE(R.string.y_axis_style) {
         @Override
         public float getValue(Jumper jumper, Competition competition, int series) throws NoResultForJumperException {
-            float[] marks = jumper.getResult(competition).getResultForSeries(series).getStyleScores();
-            return (float) IntStream.range(0, marks.length)
-                    .mapToDouble(i -> marks[i]).average().getAsDouble();
+            List<Float> marks = jumper.getResult(competition).getResultForSeries(series).getStyleScores();
+            return (float) marks.stream().mapToDouble(Float::floatValue).average().getAsDouble();
         }
     },
     POINTS(R.string.y_axis_points) {

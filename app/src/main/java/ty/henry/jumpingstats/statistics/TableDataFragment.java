@@ -1,7 +1,6 @@
 package ty.henry.jumpingstats.statistics;
 
 import android.content.SharedPreferences;
-import android.support.v7.preference.PreferenceScreen;
 
 import ty.henry.jumpingstats.R;
 import ty.henry.jumpingstats.competitions.Season;
