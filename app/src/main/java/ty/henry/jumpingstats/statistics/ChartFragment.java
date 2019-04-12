@@ -13,17 +13,10 @@ import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.DoubleSummaryStatistics;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
 
 import ty.henry.jumpingstats.competitions.Competition;
-import ty.henry.jumpingstats.jumpers.Jumper;
-
-import static java.util.stream.Collectors.*;
 
 public abstract class ChartFragment extends Fragment {
 
@@ -141,18 +134,6 @@ public abstract class ChartFragment extends Fragment {
         chart.invalidate();
     }
 
-    protected Map<Float, List<Jumper>> getXValueToJumpersMap() {
-        ArrayList<Jumper> jumpers = statsFragment.selectedJumpersList;
-        StatsFragment.XValueGetter xValueGetter = statsFragment.xValueGetter;
-        return jumpers.stream().collect(groupingBy(xValueGetter::getValue));
-    }
-
-    protected ArrayList<Float> getXValuesList(Map<Float, List<Jumper>> xValueToJumpers) {
-        ArrayList<Float> xValues = new ArrayList<>(xValueToJumpers.keySet());
-        Collections.sort(xValues);
-        return xValues;
-    }
-
     protected IAxisValueFormatter getXValuesFormatter(List<Float> xValues) {
         return (value, axis) -> {
             int ind = (int) value;
@@ -166,32 +147,14 @@ public abstract class ChartFragment extends Fragment {
     }
 
     protected IAxisValueFormatter getCompetitionsValueFormatter() {
-        ArrayList<Competition> competitions = statsFragment.selectedCompetitionsList;
+        List<Competition> competitions = statsFragment.selectedCompetitionsList;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yy");
         return (value, axis) -> {
             int ind = ((int)value)/2;
             if(ind < competitions.size())
-                return competitions.get(ind).getShortDate();
+                return formatter.format(competitions.get(ind).getDate());
             else
                 return "";
         };
-    }
-
-    protected DoubleSummaryStatistics getSummaryStatistics(List<Jumper> jumpers) {
-        return jumpers.stream().flatMap(this::getResultsForJumper).collect(summarizingDouble(r -> r));
-    }
-
-    private Stream<Double> getResultsForJumper(Jumper jumper) {
-        ArrayList<Double> results = new ArrayList<>();
-        for(Competition comp : statsFragment.selectedCompetitionsList) {
-            for(int i=1; i<3; i++) {
-                try {
-                    results.add((double)statsFragment.yValueGetter.getValue(jumper, comp, i));
-                }
-                catch (Exception ex) {
-
-                }
-            }
-        }
-        return results.stream();
     }
 }

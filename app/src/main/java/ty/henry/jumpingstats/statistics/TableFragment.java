@@ -1,7 +1,7 @@
 package ty.henry.jumpingstats.statistics;
 
 
-import android.content.Context;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -19,17 +19,13 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
+import ty.henry.jumpingstats.MainViewModel;
 import ty.henry.jumpingstats.R;
 import ty.henry.jumpingstats.competitions.Competition;
-import ty.henry.jumpingstats.competitions.Result;
 import ty.henry.jumpingstats.competitions.Season;
 import ty.henry.jumpingstats.jumpers.Jumper;
 
@@ -45,7 +41,6 @@ public class TableFragment extends Fragment {
 
     private List<Jumper> selectedJumpersList;
     private List<Competition> selectedCompetitionsList;
-    private StatsFragment.StatsFragmentListener statsFragmentListener;
     private boolean groupByK;
     private TableItem[] tableItems;
 
@@ -54,58 +49,27 @@ public class TableFragment extends Fragment {
     }
 
     @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        if(!(context instanceof StatsFragment.StatsFragmentListener)) {
-            throw new IllegalStateException("TableFragment's activity must implement StatsFragmentListener");
-        }
-        statsFragmentListener = (StatsFragment.StatsFragmentListener) context;
-    }
-
-    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         getDataFromSharedPreferences();
         View fragmentView = inflater.inflate(R.layout.fragment_table, container, false);
 
-        String[] titles = getResources().getStringArray(R.array.table_values);
-        StatsFragment.YValueGetter[] functions = new StatsFragment.YValueGetter[]{
-                (jumper, competition, series) -> jumper.getResults(competition)[series-1].getDistance(),
-                (jumper, competition, series) -> Math.abs(jumper.getResults(competition)[series-1].getWind()),
-                (jumper, competition, series) -> jumper.getResults(competition)[series-1].getSpeed(),
-                (jumper, competition, series) -> {
-                    float[] marks = jumper.getResults(competition)[series-1].getStyleScores();
-                    return (float) IntStream.range(0, marks.length)
-                            .mapToDouble(i -> marks[i]).average().getAsDouble();
-                },
-                (jumper, competition, series) -> {
-                    Result[] results = jumper.getResults(competition);
-                    float diff = results[1].points() - results[0].points();
-                    return Math.abs(diff);
-                }
-        };
-        tableItems = new TableItem[titles.length];
-        for(int i=0; i<titles.length; i++) {
-            tableItems[i] = new TableItem();
-            tableItems[i].title = titles[i];
-            tableItems[i].function = functions[i];
-        }
+        tableItems = TableItem.values();
 
         ConstraintLayout constraintLayout = fragmentView.findViewById(R.id.constraintLayout);
         if(groupByK && selectedCompetitionsList.size() > 0) {
-            Map<Float, List<Competition>> pointKToComps = selectedCompetitionsList
-                    .stream()
-                    .collect(Collectors.groupingBy(Competition::getPointK));
-            ArrayList<Float> pointsK = new ArrayList<>(pointKToComps.keySet());
+            Classifier<Competition, Float> compClassifier = new Classifier<>(selectedCompetitionsList,
+                    Competition::getPointK);
+            List<Float> pointsK = compClassifier.getValues();
             Collections.sort(pointsK);
             int firstLastGroup = pointsK.size()==1 ? FIRST_AND_LAST : FIRST;
             int prevId = addItemsGroup(constraintLayout, pointsK.get(0),
-                    constraintLayout.getId(), firstLastGroup, pointKToComps.get(pointsK.get(0)));
+                    constraintLayout.getId(), firstLastGroup, compClassifier.getGroup(pointsK.get(0)));
             firstLastGroup = MIDDLE;
             for(int i=1; i<pointsK.size(); i++) {
                 if(i == pointsK.size() - 1) firstLastGroup = LAST;
                 prevId = addItemsGroup(constraintLayout, pointsK.get(i),
-                        prevId, firstLastGroup, pointKToComps.get(pointsK.get(i)));
+                        prevId, firstLastGroup, compClassifier.getGroup(pointsK.get(i)));
             }
         }
         else {
@@ -116,18 +80,21 @@ public class TableFragment extends Fragment {
     }
 
     private void getDataFromSharedPreferences() {
+        MainViewModel mainViewModel = ViewModelProviders.of(getActivity()).get(MainViewModel.class);
+        List<Jumper> allJumpers = mainViewModel.getJumpers().getValue();
+
         selectedJumpersList = new ArrayList<>();
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
         Set<String> selectedJumpers = preferences.getStringSet(TableDataFragment.JUMPERS_PREF_KEY,
                 Collections.emptySet());
-        for(Jumper jump : statsFragmentListener.getJumpersList()) {
+        for(Jumper jump : allJumpers) {
             if(selectedJumpers.contains(jump.getId()+"")) {
                 selectedJumpersList.add(jump);
             }
         }
 
         selectedCompetitionsList = new ArrayList<>();
-        TreeMap<Season, TreeSet<Competition>> seasonToCompetitions = statsFragmentListener.getSeasonToCompetitionsMap();
+        TreeMap<Season, TreeSet<Competition>> seasonToCompetitions = mainViewModel.getSeasonToCompetitions().getValue();
         for(Season season : seasonToCompetitions.keySet()) {
             Set<String> selectedCompetitions = preferences
                     .getStringSet(TableDataFragment.SEASON_PREF_KEY(season),
@@ -186,12 +153,22 @@ public class TableFragment extends Fragment {
                              int lastViewId, int firstLast, List<Competition> competitions) {
         TextView titleTextView = new TextView(getActivity());
         setTextViewProperties(titleTextView, TEXT_SIZE);
-        titleTextView.setText(tableItem.title);
+        titleTextView.setText(tableItem.getTitleId());
         constraintLayout.addView(titleTextView);
+
+        GroupResult groupResult = new GroupResult(selectedJumpersList, competitions, tableItem);
+        String[] values;
+        try {
+            String maxString = groupResult.getMax().toString();
+            String minString = groupResult.getMin().toString();
+            String avgString = String.format("%.2f", groupResult.getAvg());
+            values = new String[]{maxString, minString, avgString};
+        } catch (NoResultForJumperException ex) {
+            values = new String[]{"-", "-", "-"};
+        }
 
         TextView[] valueNameTextViews = new TextView[3];
         TextView[] valueTextViews = new TextView[3];
-        String[] values = tableItem.getValues(selectedJumpersList, competitions);
         String[] valuesNames = new String[]{getString(R.string.max), getString(R.string.min), getString(R.string.avg)};
 
         for(int i=0; i<3; i++) {
@@ -262,74 +239,4 @@ public class TableFragment extends Fragment {
         textView.setLayoutParams(layoutParams);
         textView.setGravity(Gravity.CENTER_HORIZONTAL);
     }
-
-    private static class TableItem {
-        String title;
-        StatsFragment.YValueGetter function;
-
-        String[] getValues(List<Jumper> jumpers, List<Competition> competitions) {
-            String[] values = new String[3];
-            getJumperAndResultStream(jumpers, competitions)
-                    .max(JumperAndResult::compare)
-                    .ifPresent(r -> values[0] = r.toString());
-            if(values[0] != null) {
-                getJumperAndResultStream(jumpers, competitions)
-                        .min(JumperAndResult::compare)
-                        .ifPresent(r -> values[1] = r.toString());
-                double avg = getJumperAndResultStream(jumpers, competitions)
-                        .collect(Collectors.averagingDouble(JumperAndResult::getResult));
-                values[2] = String.format("%.2f", avg);
-            }
-            else {
-                for(int i=0; i<3; i++) values[i] = "-";
-            }
-            return values;
-        }
-
-        private Stream<JumperAndResult> getJumperAndResultStream(List<Jumper> jumpers, List<Competition> competitions){
-            return jumpers.stream().flatMap(j -> getResultsForJumper(j, competitions));
-        }
-
-        private Stream<JumperAndResult> getResultsForJumper(Jumper jumper, List<Competition> competitions) {
-            ArrayList<JumperAndResult> results = new ArrayList<>();
-            for(Competition comp : competitions) {
-                for(int i=1; i<3; i++) {
-                    try {
-                        double res = (double)function.getValue(jumper, comp, i);
-                        results.add(new JumperAndResult(jumper, res));
-                    }
-                    catch (Exception ex) {
-
-                    }
-                }
-            }
-            return results.stream();
-        }
-    }
-
-    private static class JumperAndResult {
-
-        Jumper jumper;
-        double result;
-
-        JumperAndResult(Jumper jumper, double result) {
-            this.jumper = jumper;
-            this.result = result;
-        }
-
-        double getResult() {
-            return result;
-        }
-
-        static int compare(JumperAndResult r1, JumperAndResult r2) {
-            if(r1.result < r2.result) return -1;
-            if(r1.result > r2.result) return 1;
-            return 0;
-        }
-
-        public String toString() {
-            return String.format("%.2f (%s)", result, jumper.getText()[0]);
-        }
-    }
-
 }

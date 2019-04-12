@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import ty.henry.jumpingstats.DBHelper;
 import ty.henry.jumpingstats.MainViewModel;
 import ty.henry.jumpingstats.R;
 import ty.henry.jumpingstats.competitions.Competition;
@@ -65,6 +66,9 @@ public class StatsFragment extends Fragment {
         allJumpers = mainViewModel.getJumpers().getValue();
         seasonToCompetitions = mainViewModel.getSeasonToCompetitions().getValue();
         getDataFromSharedPreferences();
+
+        DBHelper dbHelper = new DBHelper(getActivity());
+        dbHelper.fillJumpersWithResults(selectedJumpersList, selectedCompetitionsList);
         return fragmentView;
     }
 

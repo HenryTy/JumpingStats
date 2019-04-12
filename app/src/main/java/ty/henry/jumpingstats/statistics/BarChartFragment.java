@@ -13,9 +13,8 @@ import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.interfaces.datasets.IBarDataSet;
 
 import java.util.ArrayList;
-import java.util.DoubleSummaryStatistics;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import ty.henry.jumpingstats.R;
 import ty.henry.jumpingstats.competitions.Competition;
@@ -55,8 +54,8 @@ public class BarChartFragment extends ChartFragment {
         BarChart barChart = (BarChart) getChart();
         barChart.setDescription(null);
         barChart.setFitBars(true);
-        ((TextView) fragmentView.findViewById(R.id.xTitle)).setText(getStatsFragment().xAxisTitle);
-        ((TextView) fragmentView.findViewById(R.id.yTitle)).setText(getStatsFragment().yAxisTitle);
+        ((TextView) fragmentView.findViewById(R.id.xTitle)).setText(getString(getStatsFragment().xOption.getTitleId()));
+        ((TextView) fragmentView.findViewById(R.id.yTitle)).setText(getString(getStatsFragment().yOption.getTitleId()));
     }
 
     @Override
@@ -75,11 +74,11 @@ public class BarChartFragment extends ChartFragment {
     protected void setChartValues() {
         StatsFragment statsFragment = getStatsFragment();
 
-        ArrayList<Competition> competitions = statsFragment.selectedCompetitionsList;
-        ArrayList<Jumper> jumpers = statsFragment.selectedJumpersList;
+        List<Competition> competitions = statsFragment.selectedCompetitionsList;
+        List<Jumper> jumpers = statsFragment.selectedJumpersList;
         BarChart barChart = (BarChart) getChart();
 
-        if (statsFragment.xValueGetter == null) {
+        if(statsFragment.xOption.equals(XOption.COMPETITION)) {
             ArrayList<IBarDataSet> dataSets = new ArrayList<>();
             setEntriesCount(Math.max(2 * competitions.size(), LABEL_COUNT) + 1);
             getChart().getXAxis().setValueFormatter(getCompetitionsValueFormatter());
@@ -92,15 +91,15 @@ public class BarChartFragment extends ChartFragment {
                             x += 0.5;
                         }
                         try {
-                            float y = statsFragment.yValueGetter.getValue(jumpers.get(ii), competitions.get(i), series);
+                            float y = statsFragment.yOption.getValue(jumpers.get(ii), competitions.get(i), series);
                             barEntries.add(new BarEntry(x, y));
-                        } catch (Exception ex) {
+                        } catch (NoResultForJumperException ex) {
                             barEntries.add(new BarEntry(x, Float.NaN));
                         }
                     }
                 }
                 if (barEntries.size() > 0) {
-                    BarDataSet dataSet = new BarDataSet(barEntries, jumpers.get(ii).getText()[0]);
+                    BarDataSet dataSet = new BarDataSet(barEntries, jumpers.get(ii).toString());
                     dataSet.setColor(colors[ii]);
                     dataSet.setDrawValues(false);
                     dataSets.add(dataSet);
@@ -124,15 +123,19 @@ public class BarChartFragment extends ChartFragment {
             legend.setWordWrapEnabled(true);
         } else {
             float barWidth = 0.9f;
-            Map<Float, List<Jumper>> xValueToJumpers = getXValueToJumpersMap();
-            ArrayList<Float> xValues = getXValuesList(xValueToJumpers);
+            Classifier<Jumper, Float> classifier = new Classifier<>(jumpers, statsFragment.xOption);
+            List<Float> xValues = classifier.getValues();
+            Collections.sort(xValues);
             setEntriesCount(Math.max(xValues.size(), LABEL_COUNT) + 1);
             getChart().getXAxis().setValueFormatter(getXValuesFormatter(xValues));
             ArrayList<BarEntry> barEntries = new ArrayList<>();
             for (int i = 0; i < xValues.size(); i++) {
-                DoubleSummaryStatistics summaryStatistics = getSummaryStatistics(xValueToJumpers.get(xValues.get(i)));
-                if (summaryStatistics.getCount() > 0) {
-                    barEntries.add(new BarEntry(i + 0.5f, (float) summaryStatistics.getAverage()));
+                GroupResult groupResult = new GroupResult(classifier.getGroup(xValues.get(i)),
+                        competitions, statsFragment.yOption);
+                try {
+                    barEntries.add(new BarEntry(i + 0.5f, groupResult.getAvg()));
+                } catch (NoResultForJumperException ex) {
+
                 }
             }
             if (barEntries.size() > 0) {

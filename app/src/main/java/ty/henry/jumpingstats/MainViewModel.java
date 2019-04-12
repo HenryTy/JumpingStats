@@ -109,6 +109,8 @@ public class MainViewModel extends AndroidViewModel {
     }
 
     public void updateCompetition(Competition competition) {
+        Competition oldCompetition = getCompetitionById(competition.getId());
+        removeCompetitionFromSharedPreferences(oldCompetition);
         UpdateTask<Competition> updateTask = new UpdateTask<>(DBHelper::update, competition, R.string.saved,
                 true, true);
         updateTask.execute();

@@ -111,10 +111,4 @@ public class Competition implements TextImageAdapter.TextImage, Comparable<Compe
     public int compareTo(Competition other) {
         return date.compareTo(other.getDate());
     }
-
-    /*public String getShortDate() {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yy");
-        return dateFormat.format(date.getTime());
-    }*/
-
 }
