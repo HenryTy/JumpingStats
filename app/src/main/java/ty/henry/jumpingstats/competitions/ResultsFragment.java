@@ -27,6 +27,7 @@ public class ResultsFragment extends Fragment {
 
     private CompetitionDetailsFragment parent;
     private RecyclerView recyclerView;
+    private ResultsAdapter resultsAdapter;
 
     public ResultsFragment() {
 
@@ -40,6 +41,9 @@ public class ResultsFragment extends Fragment {
         recyclerView = fragmentView.findViewById(R.id.resultsRecycler);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
         recyclerView.setLayoutManager(layoutManager);
+        if(resultsAdapter != null) {
+            recyclerView.setAdapter(resultsAdapter);
+        }
         return fragmentView;
     }
 
@@ -60,7 +64,7 @@ public class ResultsFragment extends Fragment {
                 Collections.singletonList(parent.competition));
         List<Jumper> sortedJumpers = new ArrayList<>(jumpers);
         sortedJumpers.sort(this::compareJumpers);
-        ResultsAdapter resultsAdapter = new ResultsAdapter(parent.competition, sortedJumpers, getActivity());
+        resultsAdapter = new ResultsAdapter(parent.competition, sortedJumpers, getActivity());
         resultsAdapter.setListener(position -> {
             AddEditResultsFragment fragment = AddEditResultsFragment
                     .newInstance(parent.competition.getId(), sortedJumpers.get(position).getId());

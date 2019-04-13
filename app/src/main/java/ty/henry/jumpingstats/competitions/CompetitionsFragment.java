@@ -61,6 +61,10 @@ public class CompetitionsFragment extends Fragment {
         LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
         recyclerView.setLayoutManager(layoutManager);
 
+        if(textImageAdapter != null) {
+            recyclerView.setAdapter(textImageAdapter);
+        }
+
         addButton = fragmentView.findViewById(R.id.addButton);
         addButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -71,6 +75,9 @@ public class CompetitionsFragment extends Fragment {
         });
 
         seasonsSpinner = fragmentView.findViewById(R.id.seasonsSpinner);
+        if(spinnerAdapter != null) {
+            seasonsSpinner.setAdapter(spinnerAdapter);
+        }
 
         ImageButton seasonButton = fragmentView.findViewById(R.id.seasonButton);
         seasonButton.setOnClickListener(view -> {

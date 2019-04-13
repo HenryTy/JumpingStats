@@ -132,7 +132,7 @@ public class AddEditJumperFragment extends Fragment {
         ArrayList<HashMap<String, Object>> spinnerData = new ArrayList<>();
         for(Country c : Country.values()) {
             HashMap<String, Object> map = new HashMap<>();
-            map.put(name, c.getNameId());
+            map.put(name, context.getString(c.getNameId()));
             map.put(flag, c.getFlagId());
             spinnerData.add(map);
         }

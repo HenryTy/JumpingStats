@@ -47,6 +47,10 @@ public class JumpersFragment extends Fragment {
         LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
         recyclerView.setLayoutManager(layoutManager);
 
+        if(textImageAdapter != null) {
+            recyclerView.setAdapter(textImageAdapter);
+        }
+
         addButton = fragmentView.findViewById(R.id.addButton);
         addButton.setOnClickListener(new View.OnClickListener() {
             @Override
