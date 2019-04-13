@@ -46,25 +46,6 @@ public class AddEditResultsFragment extends Fragment {
         return fragment;
     }
 
-    public void updateResult(SeriesResult seriesResult) {
-        if(result == null) {
-            result = new Result(jumper, competition);
-            jumper.setResult(competition, result);
-        }
-        result.setResultForSeries(seriesResult.getSeries(), seriesResult);
-    }
-
-    public void deleteResult(int series) {
-        Result.checkSeriesArgument(series);
-        if(result != null) {
-            result.setResultForSeries(series, null);
-            if(result.isEmpty()) {
-                jumper.setResult(competition, null);
-                result = null;
-            }
-        }
-    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -86,7 +67,8 @@ public class AddEditResultsFragment extends Fragment {
                 try {
                     result = jumper.getResult(competition);
                 } catch (NoResultForJumperException ex2) {
-
+                    result = new Result(jumper, competition);
+                    jumper.setResult(competition, result);
                 }
             }
 

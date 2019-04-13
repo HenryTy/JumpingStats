@@ -212,7 +212,7 @@ public class EditResultFragment extends Fragment {
         }
 
         this.result = createdResult;
-        parent.updateResult(createdResult);
+        parent.result.setResultForSeries(series, createdResult);
     }
 
     private void deleteResult() {
@@ -221,7 +221,7 @@ public class EditResultFragment extends Fragment {
         confirmFragment.setListener(() -> {
             MainViewModel mainViewModel = ViewModelProviders.of(getActivity()).get(MainViewModel.class);
             mainViewModel.deleteResult(result);
-            parent.deleteResult(series);
+            parent.result.setResultForSeries(series, null);
             clearData();
         });
         confirmFragment.show(getChildFragmentManager(), "dialog");

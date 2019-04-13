@@ -68,7 +68,7 @@ public class Jumper implements TextImageAdapter.TextImage, DBHelper.Identifiable
 
     public Result getResult(Competition competition) throws NoResultForJumperException {
         Result result = compResMap.get(competition);
-        if(result == null) {
+        if(result == null || result.isEmpty()) {
             throw new NoResultForJumperException();
         }
         return result;
