@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity implements JumpersFragment.J
         prepareDrawer();
 
         StatsFragment statsFragment = new StatsFragment();
-        //openFragment(statsFragment, false);
+        openFragment(statsFragment, false);
         getSupportActionBar().setTitle(drawerOptions[0]);
     }
 

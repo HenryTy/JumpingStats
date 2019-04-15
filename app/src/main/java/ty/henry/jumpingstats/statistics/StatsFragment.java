@@ -47,6 +47,8 @@ public class StatsFragment extends Fragment {
     YOption yOption;
     XOption xOption;
 
+    private ViewPager viewPager;
+
     public interface StatsFragmentListener {
         void openFragment(Fragment fragment, boolean backStack);
     }
@@ -59,17 +61,32 @@ public class StatsFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View fragmentView = inflater.inflate(R.layout.fragment_stats, container, false);
-        ViewPager viewPager = fragmentView.findViewById(R.id.statsViewPager);
-        viewPager.setAdapter(new MyPagerAdapter(getChildFragmentManager()));
+        viewPager = fragmentView.findViewById(R.id.statsViewPager);
+
+        if(allJumpers != null && seasonToCompetitions != null) {
+            init();
+        }
+        return fragmentView;
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
 
         MainViewModel mainViewModel = ViewModelProviders.of(getActivity()).get(MainViewModel.class);
-        allJumpers = mainViewModel.getJumpers().getValue();
-        seasonToCompetitions = mainViewModel.getSeasonToCompetitions().getValue();
-        getDataFromSharedPreferences();
-
-        DBHelper dbHelper = new DBHelper(getActivity());
-        dbHelper.fillJumpersWithResults(selectedJumpersList, selectedCompetitionsList);
-        return fragmentView;
+        mainViewModel.getJumpers().observe(this, jumpers -> {
+            allJumpers = jumpers;
+            if(allJumpers != null && seasonToCompetitions != null) {
+                init();
+            }
+        });
+        mainViewModel.getSeasonToCompetitions().observe(this, seasonMap -> {
+            seasonToCompetitions = seasonMap;
+            if(allJumpers != null && seasonToCompetitions != null) {
+                init();
+            }
+        });
     }
 
     @Override
@@ -80,6 +97,15 @@ public class StatsFragment extends Fragment {
         } catch (ClassCastException ex) {
             throw new ClassCastException(context.toString() + " must implement StatsFragmentListener");
         }
+    }
+
+    private void init() {
+        getDataFromSharedPreferences();
+
+        DBHelper dbHelper = new DBHelper(getActivity());
+        dbHelper.fillJumpersWithResults(selectedJumpersList, selectedCompetitionsList);
+
+        viewPager.setAdapter(new MyPagerAdapter(getChildFragmentManager()));
     }
 
     private void getDataFromSharedPreferences() {
@@ -106,17 +132,13 @@ public class StatsFragment extends Fragment {
         }
         Collections.reverse(selectedCompetitionsList);
 
-        int xOptionNr = preferences.getInt(ChartsDataFragment.X_AXIS_PREF_KEY, 0);
+        String xOptionNrStr = preferences.getString(ChartsDataFragment.X_AXIS_PREF_KEY, "0");
+        int xOptionNr = Integer.parseInt(xOptionNrStr);
         xOption = XOption.values()[xOptionNr];
 
-        int yOptionNr = preferences.getInt(ChartsDataFragment.Y_AXIS_PREF_KEY, 0);
+        String yOptionNrStr = preferences.getString(ChartsDataFragment.Y_AXIS_PREF_KEY, "0");
+        int yOptionNr = Integer.parseInt(yOptionNrStr);
         yOption = YOption.values()[yOptionNr];
-    }
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setHasOptionsMenu(true);
     }
 
     @Override
