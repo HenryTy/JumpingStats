@@ -38,11 +38,13 @@ public class ResultsFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View fragmentView = inflater.inflate(R.layout.fragment_results, container, false);
-        recyclerView = fragmentView.findViewById(R.id.resultsRecycler);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
-        recyclerView.setLayoutManager(layoutManager);
-        if(resultsAdapter != null) {
-            recyclerView.setAdapter(resultsAdapter);
+        if(parent.competition != null) {
+            recyclerView = fragmentView.findViewById(R.id.resultsRecycler);
+            LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity());
+            recyclerView.setLayoutManager(layoutManager);
+            if (resultsAdapter != null) {
+                recyclerView.setAdapter(resultsAdapter);
+            }
         }
         return fragmentView;
     }
@@ -59,18 +61,20 @@ public class ResultsFragment extends Fragment {
     }
 
     private void updateRecyclerView(List<Jumper> jumpers) {
-        DBHelper dbHelper = new DBHelper(getActivity());
-        dbHelper.fillJumpersWithResults(jumpers,
-                Collections.singletonList(parent.competition));
-        List<Jumper> sortedJumpers = new ArrayList<>(jumpers);
-        sortedJumpers.sort(this::compareJumpers);
-        resultsAdapter = new ResultsAdapter(parent.competition, sortedJumpers, getActivity());
-        resultsAdapter.setListener(position -> {
-            AddEditResultsFragment fragment = AddEditResultsFragment
-                    .newInstance(parent.competition.getId(), sortedJumpers.get(position).getId());
-            parent.listener.openFragment(fragment, true);
-        });
-        recyclerView.setAdapter(resultsAdapter);
+        if(parent.competition != null) {
+            DBHelper dbHelper = new DBHelper(getActivity());
+            dbHelper.fillJumpersWithResults(jumpers,
+                    Collections.singletonList(parent.competition));
+            List<Jumper> sortedJumpers = new ArrayList<>(jumpers);
+            sortedJumpers.sort(this::compareJumpers);
+            resultsAdapter = new ResultsAdapter(parent.competition, sortedJumpers, getActivity());
+            resultsAdapter.setListener(position -> {
+                AddEditResultsFragment fragment = AddEditResultsFragment
+                        .newInstance(parent.competition.getId(), sortedJumpers.get(position).getId());
+                parent.listener.openFragment(fragment, true);
+            });
+            recyclerView.setAdapter(resultsAdapter);
+        }
     }
 
     private int compareJumpers(Jumper jumper1, Jumper jumper2) {

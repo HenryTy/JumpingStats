@@ -29,20 +29,22 @@ public class CompetitionDataFragment extends Fragment {
         }
         parent = (CompetitionDetailsFragment) getParentFragment();
 
-        TextView countryTextView = fragmentView.findViewById(R.id.countryTextView);
-        TextView hillSizeTextView = fragmentView.findViewById(R.id.hillSizeTextView);
-        TextView headWindTextView = fragmentView.findViewById(R.id.headWindTextView);
-        TextView tailWindTextView = fragmentView.findViewById(R.id.tailWindTextView);
+        if(parent.competition != null) {
+            TextView countryTextView = fragmentView.findViewById(R.id.countryTextView);
+            TextView hillSizeTextView = fragmentView.findViewById(R.id.hillSizeTextView);
+            TextView headWindTextView = fragmentView.findViewById(R.id.headWindTextView);
+            TextView tailWindTextView = fragmentView.findViewById(R.id.tailWindTextView);
 
-        String countryText = getString(R.string.country) + ": " + getString(parent.competition.getCountry().getNameId());
-        String hillSizeText = getString(R.string.hillSize) + ": " + parent.competition.getHillSize();
-        String headWindText = getString(R.string.headWindPoints) + ": " + parent.competition.getHeadWindPoints();
-        String tailWindText = getString(R.string.tailWindPoints) + ": " + parent.competition.getTailWindPoints();
+            String countryText = getString(R.string.country) + ": " + getString(parent.competition.getCountry().getNameId());
+            String hillSizeText = getString(R.string.hillSize) + ": " + parent.competition.getHillSize();
+            String headWindText = getString(R.string.headWindPoints) + ": " + parent.competition.getHeadWindPoints();
+            String tailWindText = getString(R.string.tailWindPoints) + ": " + parent.competition.getTailWindPoints();
 
-        countryTextView.setText(countryText);
-        hillSizeTextView.setText(hillSizeText);
-        headWindTextView.setText(headWindText);
-        tailWindTextView.setText(tailWindText);
+            countryTextView.setText(countryText);
+            hillSizeTextView.setText(hillSizeText);
+            headWindTextView.setText(headWindText);
+            tailWindTextView.setText(tailWindText);
+        }
         return fragmentView;
     }
 
