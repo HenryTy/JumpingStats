@@ -26,16 +26,18 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.Month;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
 import ty.henry.jumpingstats.jumpers.Jumper;
 
 import static android.support.test.espresso.Espresso.*;
 import static android.support.test.espresso.matcher.ViewMatchers.*;
+import static android.support.test.espresso.matcher.RootMatchers.*;
 import static org.hamcrest.Matchers.*;
 import static android.support.test.espresso.action.ViewActions.*;
-import static java.util.Calendar.*;
 import static android.support.test.espresso.assertion.ViewAssertions.*;
 
 @LargeTest
@@ -52,10 +54,9 @@ public class JumpersFragmentLargeTest {
 
     @Test
     public void addDisplayEditAndDeleteJumperTest() {
-        Calendar date = getInstance();
-        date.set(1970, 7, 24);
+        LocalDate date = LocalDate.of(1970, Month.AUGUST, 24);
         Jumper jumper = new Jumper("Marion", "Moseby", Country.USA, date, 1.68f);
-        String countryName = jumper.getCountry().getCountryName(mainActivityTestRule.getActivity());
+        String countryName = mainActivityTestRule.getActivity().getString(jumper.getCountry().getNameId());
 
         addJumper(jumper);
         onView(withId(R.id.jumpersRecycler)).perform(RecyclerViewActions.actionOnHolderItem(withJumper(jumper), click()));
@@ -74,6 +75,7 @@ public class JumpersFragmentLargeTest {
         onView(withId(R.id.heightEditText)).perform(scrollTo(), replaceText(updatedJumper.getHeight()+""),
                 ViewActions.closeSoftKeyboard());
         onView(withId(R.id.saveButton)).perform(scrollTo(), click());
+        Espresso.pressBack();
 
         testDetailsFragment(updatedJumper);
 
@@ -100,8 +102,7 @@ public class JumpersFragmentLargeTest {
     @Test
     public void add10JumpersAddExistingJumperAndDeleteJumpersTest() {
         Jumper[] jumpers = new Jumper[10];
-        Calendar date = getInstance();
-        date.set(1970, 7, 24);
+        LocalDate date = LocalDate.of(1970, Month.AUGUST, 24);
         for(int i=0; i<10; i++) {
             jumpers[i] = new Jumper("Marion"+i, "Moseby", Country.FRANCE, date, 1.68f);
             addJumper(jumpers[i]);
@@ -112,16 +113,18 @@ public class JumpersFragmentLargeTest {
         onView(withId(R.id.edit)).perform(click());
         onView(withId(R.id.nameEditText)).perform(scrollTo(), replaceText(jumpers[5].getName()));
         onView(withId(R.id.saveButton)).perform(scrollTo(), click());
-        onView(withId(R.id.saveButton)).check(matches(isDisplayed()));
+        onView(withText(R.string.jumper_exists_message))
+                .inRoot(withDecorView(not(mainActivityTestRule.getActivity().getWindow().getDecorView())))
+                .check(matches(isDisplayed()));
         Espresso.closeSoftKeyboard();
         Espresso.pressBack();
         Espresso.pressBack();
         onView(withId(R.id.jumpersRecycler)).perform(RecyclerViewActions.scrollToHolder(withJumper(jumpers[9])));
 
         addJumper(jumpers[3]);
-        onView(withId(R.id.saveButton)).check(matches(isDisplayed()));
-        Espresso.closeSoftKeyboard();
-        Espresso.pressBack();
+        onView(withText(R.string.jumper_exists_message))
+                .inRoot(withDecorView(not(mainActivityTestRule.getActivity().getWindow().getDecorView())))
+                .check(matches(isDisplayed()));
 
         onView(withId(R.id.delete)).perform(click());
         for(Jumper j : jumpers) {
@@ -144,29 +147,32 @@ public class JumpersFragmentLargeTest {
     }
 
     private void addJumper(Jumper jumper) {
-        Calendar date = jumper.getDateOfBirth();
+        LocalDate date = jumper.getDateOfBirth();
         onView(withId(R.id.addButton)).perform(click());
         onView(withId(R.id.nameEditText)).perform(scrollTo(), typeText(jumper.getName()));
         onView(withId(R.id.surnameEditText)).perform(scrollTo(), typeText(jumper.getSurname()));
         onView(withId(R.id.heightEditText)).perform(scrollTo(), typeText(jumper.getHeight()+""));
+        Espresso.closeSoftKeyboard();
+
         onView(withId(R.id.datePicker)).perform(scrollTo(),
-                PickerActions.setDate(date.get(YEAR), date.get(MONTH)+1, date.get(DAY_OF_MONTH)));
+                PickerActions.setDate(date.getYear(), date.getMonthValue(), date.getDayOfMonth()));
         onView(withId(R.id.countrySpinner)).perform(scrollTo(), click());
-        String countryName = jumper.getCountry().getCountryName(mainActivityTestRule.getActivity());
+        String countryName = mainActivityTestRule.getActivity().getString(jumper.getCountry().getNameId());
         onData(allOf(is(instanceOf(Map.class)), hasEntry(equalTo("name"), equalTo(countryName))))
                 .perform(click());
         onView(withId(R.id.saveButton)).check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
                 .perform(scrollTo(), click());
+        Espresso.pressBack();
     }
 
     private void testDetailsFragment(Jumper jumper) {
-        String countryName = jumper.getCountry().getCountryName(mainActivityTestRule.getActivity());
-        Calendar date = jumper.getDateOfBirth();
+        String countryName = mainActivityTestRule.getActivity().getString(jumper.getCountry().getNameId());
+        LocalDate date = jumper.getDateOfBirth();
         onView(withId(R.id.nameTextView)).check(matches(withText(containsString(jumper.getName()))));
         onView(withId(R.id.surnameTextView)).check(matches(withText(containsString(jumper.getSurname()))));
         onView(withId(R.id.countryTextView)).check(matches(withText(containsString(countryName))));
         onView(withId(R.id.heightTextView)).check(matches(withText(containsString(jumper.getHeight()+""))));
-        String dateString = DBHelper.calendarToString(date);
+        String dateString = DateTimeFormatter.ISO_LOCAL_DATE.format(date);
         onView(withId(R.id.dateTextView)).check(matches(withText(containsString(dateString))));
     }
 
@@ -190,7 +196,7 @@ public class JumpersFragmentLargeTest {
         };
     }
 
-    private static Matcher<View> withPickerDate(Calendar calendar) {
+    private static Matcher<View> withPickerDate(LocalDate date) {
         return new TypeSafeMatcher<View>() {
             @Override
             protected boolean matchesSafely(View item) {
@@ -198,9 +204,9 @@ public class JumpersFragmentLargeTest {
                     return false;
                 }
                 DatePicker picker = (DatePicker) item;
-                return picker.getYear()==calendar.get(YEAR) &&
-                        picker.getMonth()==calendar.get(MONTH) &&
-                        picker.getDayOfMonth()==calendar.get(DAY_OF_MONTH);
+                return picker.getYear()==date.getYear() &&
+                        picker.getMonth()==date.getMonthValue()-1 &&
+                        picker.getDayOfMonth()==date.getDayOfMonth();
             }
 
             @Override
@@ -210,13 +216,13 @@ public class JumpersFragmentLargeTest {
         };
     }
 
-    private static Matcher<TextImageAdapter.ViewHolder> withJumper(Jumper jumper) {
+    private Matcher<TextImageAdapter.ViewHolder> withJumper(Jumper jumper) {
         return new TypeSafeMatcher<TextImageAdapter.ViewHolder>() {
             @Override
             protected boolean matchesSafely(TextImageAdapter.ViewHolder holder) {
                 TextView textView = holder.itemView.findViewById(R.id.text1);
                 ImageView imageView = holder.itemView.findViewById(R.id.image);
-                return textView.getText().equals(jumper.getText()[0])
+                return textView.getText().equals(jumper.getText(mainActivityTestRule.getActivity())[0])
                         && containsDrawable(imageView, jumper.getImage());
             }
 
